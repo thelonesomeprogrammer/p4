@@ -1,0 +1,17 @@
+[patch.crates-io.std_msgs]
+path = "/workdir/install/std_msgs/share/std_msgs/rust"
+
+[patch.crates-io.action_msgs]
+path = "/workdir/install/action_msgs/share/action_msgs/rust"
+
+[patch.crates-io.service_msgs]
+path = "/workdir/install/service_msgs/share/service_msgs/rust"
+
+[patch.crates-io.unique_identifier_msgs]
+path = "/workdir/install/unique_identifier_msgs/share/unique_identifier_msgs/rust"
+
+[patch.crates-io.builtin_interfaces]
+path = "/workdir/install/builtin_interfaces/share/builtin_interfaces/rust"
+
+[patch.crates-io.rosidl_runtime_rs]
+path = "/workdir/install/rosidl_runtime_rs/share/rosidl_runtime_rs/rust"
