@@ -174,7 +174,7 @@ source "app_api/Kconfig"
 
 config APP_ENABLE
     bool "Enable app entry point"
-    default y
+    default n
     help
         When enabled the firmware will call a function void appMain() from a
         task after the startup sequence has completed. This function should not
