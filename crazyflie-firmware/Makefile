@@ -69,7 +69,7 @@ objs-y += src
 objs-y += vendor
 
 objs-y += app_api
-objs-y += app/test
+objs-y += app/ootcontroller
 objs-y += $(OOT)
 
 MEM_SIZE_FLASH_K = 1008
