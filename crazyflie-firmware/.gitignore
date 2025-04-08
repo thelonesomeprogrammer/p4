@@ -43,6 +43,7 @@ build/
 !/tools/*
 
 **/*.o
+**/*.o.d
 **/*.cmd
 **/*.a
 *.elf

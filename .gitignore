@@ -21,6 +21,9 @@ qtcreator-*
 
 *~
 
+__pycache__/
+
+
 # Emacs
 .#*
 
