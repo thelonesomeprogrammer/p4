@@ -1,4 +1,3 @@
-
 import time
 import logging
 import cflib
@@ -12,11 +11,8 @@ logging.basicConfig(level=logging.ERROR)
 # URI for Crazyflie over Crazyradio PA
 URI = "radio://0/80/2M"  # Adjust channel and datarate if needed
 
-
 def imu_callback(timestamp, data, logconf):
     print(data)
-
-
 
 def simple_connect():
     """Connects to the Crazyflie and prints battery voltage."""
@@ -33,9 +29,6 @@ def simple_connect():
         while True:
             input("Press Enter to continue...")
             channel.send_packet([0x01])
-
-
-
 
 if __name__ == "__main__":
     simple_connect()
