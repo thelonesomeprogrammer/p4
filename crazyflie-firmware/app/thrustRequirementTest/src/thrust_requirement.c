@@ -37,82 +37,69 @@
 #include "task.h"
 
 #include "param.h"
+#include "pm.h"
 
 #include "app_channel.h"
 
 
 struct testPacketRX {
-  	bool next;
+  	bool start;
 } __attribute__((packed));
-
-struct testPacketTX {
-	uint16_t mode;
-	uint16_t procent;
-} __attribute__((packed));
-
 
 void appMain() {
 	struct testPacketRX rxPacket;
-	struct testPacketTX txPacket;
 
 	paramVarId_t idmoterena = paramGetVarId("motorPowerSet", "enable");
+	paramSetInt(idmoterena, 1);
 	paramVarId_t idm1 = paramGetVarId("motorPowerSet", "m1");
 	paramVarId_t idm2 = paramGetVarId("motorPowerSet", "m2");
 	paramVarId_t idm3 = paramGetVarId("motorPowerSet", "m3");
 	paramVarId_t idm4 = paramGetVarId("motorPowerSet", "m4");
 
 	uint16_t max = 65534;
-	uint16_t procent = 0;
-	uint16_t mode = 0;
-	uint16_t new_value = (procent*max) / 100;
+	uint16_t procent = 50;
+	uint16_t mode = 4;
+	uint16_t thrust_value = (procent*max) / 100;
 
-	paramSetInt(idmoterena, 1);
-	paramSetInt(idm1, new_value);
-	paramSetInt(idm2, new_value);
-	paramSetInt(idm3, new_value);
-	paramSetInt(idm4, new_value);
+	// paramSetInt(idm1, thrust_value);
+	// paramSetInt(idm2, thrust_value);
+	// paramSetInt(idm3, thrust_value);
+	// paramSetInt(idm4, thrust_value);
   	while(1) {
 		if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), APPCHANNEL_WAIT_FOREVER)) {
 
-			if (rxPacket.next) {
-				mode = 1;
-				if (mode == 1) {
-					procent = (procent + 5) % 105;
-					new_value = (procent*max) / 100;
-				}
-			}
-
-			txPacket.mode = mode;
-			txPacket.procent = procent;
+			// if (rxPacket.start) {
+			// 	thrust_value = (procent*max) / 100;
+			// }
 
 			if (mode == 0) {
-				paramSetInt(idm1, new_value);
+				paramSetInt(idm1, thrust_value);
 				paramSetInt(idm2, 0);
 				paramSetInt(idm3, 0);
 				paramSetInt(idm4, 0);
 			} else if (mode == 1) {
 				paramSetInt(idm1, 0);
-				paramSetInt(idm2, new_value);
+				paramSetInt(idm2, thrust_value);
 				paramSetInt(idm3, 0);
 				paramSetInt(idm4, 0);
 			} else if (mode == 2) {
 				paramSetInt(idm1, 0);
 				paramSetInt(idm2, 0);
-				paramSetInt(idm3, new_value);
+				paramSetInt(idm3, thrust_value);
 				paramSetInt(idm4, 0);
 			} else if (mode == 3) {
 				paramSetInt(idm1, 0);
 				paramSetInt(idm2, 0);
 				paramSetInt(idm3, 0);
-				paramSetInt(idm4, new_value);
+				paramSetInt(idm4, thrust_value);
 			} else if (mode == 4) {
-				paramSetInt(idm1, new_value);
-				paramSetInt(idm2, new_value);
-				paramSetInt(idm3, new_value);
-				paramSetInt(idm4, new_value);
+				paramSetInt(idm1, thrust_value);
+				paramSetInt(idm2, thrust_value);
+				paramSetInt(idm3, thrust_value);
+				paramSetInt(idm4, thrust_value);
 			}
 
-			appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
+			appchannelSendDataPacket
     	}
   	}
 }
