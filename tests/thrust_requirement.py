@@ -1,10 +1,20 @@
 import time
 import logging
+import struct
+import threading
+from dataclasses import dataclass
 import cflib
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.appchannel import Appchannel
+
+class DataPacket:
+    battery_voltage: float
+    pressure_max: float
+    pressure_min: float
+    pressure: float
+    procent: int
 
 # Set up logging
 logging.basicConfig(level=logging.ERROR)
@@ -12,9 +22,26 @@ logging.basicConfig(level=logging.ERROR)
 # URI for Crazyflie over Crazyradio PA
 URI = "radio://0/80/2M"  # Adjust channel and datarate if needed
 
-def imu_callback(timestamp, data, logconf):
-    print(f'{logconf} Data: {data}')
-    # print(f'{logconf} Data[0]: {data["m1"]}')
+dataPacket = DataPacket()
+cb_received = threading.Event()
+
+def appchannel_callback(data): 
+    hex_values = " ".join("{:02x}".format(b) for b in data)
+    print("Received appchannel data (hex):", hex_values)
+    dataPacket.battery_voltage = struct.unpack('<f', data[0:4])[0]
+    print(f"Battery Voltage: {dataPacket.battery_voltage} V")
+
+    dataPacket.pressure_max = struct.unpack('<f', data[4:8])[0]
+    print(f"Pressure Max: {dataPacket.pressure_max} mbar")
+    dataPacket.pressure_min = struct.unpack('<f', data[8:12])[0]
+    print(f"Pressure Min: {dataPacket.pressure_min} mbar")
+    dataPacket.pressure = struct.unpack('<f', data[12:16])[0]
+    print(f"Pressure: {dataPacket.pressure} mbar \n")
+
+    dataPacket.procent = struct.unpack('<i', data[16:20])[0]
+    print(f"Procent: {dataPacket.procent} %")
+
+    cb_received.set()
 
 def simple_connect():
     """Connects to the Crazyflie"""
@@ -22,40 +49,28 @@ def simple_connect():
     # Initialize the low-level drivers
     cflib.crtp.init_drivers()
 
-    # Use SyncCrazyflie for automatic connection handling
-    with SyncCrazyflie(URI, cf=Crazyflie()) as scf:
-        print("Connected!")
-        channel = Appchannel(scf.cf)
-        
-        scf.cf.connection_requested.add_callback
+    cf = Crazyflie(rw_cache='./cache')
+    cf.open_link('radio://0/80/2M')
+    print("Link opened!")
 
-        rpm_log = LogConfig(name="rpm", period_in_ms=100)
-        rpm_log.add_variable("rpm.m1", "uint16_t")
-        rpm_log.add_variable("rpm.m2", "uint16_t")
-        rpm_log.add_variable("rpm.m3", "uint16_t")
-        rpm_log.add_variable("rpm.m4", "uint16_t")
-        scf.cf.log.add_config(rpm_log)
-        rpm_log.data_received_cb.add_callback(imu_callback)
+    cf.appchannel.packet_received.add_callback(appchannel_callback)
+    print("Callback added")
 
-        pm_log = LogConfig(name="pm", period_in_ms=100)
-        pm_log.add_variable("pm.batteryLevel", "uint8_t")
-        scf.cf.log.add_config(pm_log)
-        pm_log.data_received_cb.add_callback(imu_callback)
+    channel = Appchannel(cf)
+    print("Sending sample request!")
+    channel.send_packet([0x00, 0x01])
 
-        rpm_log.start()
-        pm_log.start()
+    while True:
+        if cb_received.is_set():
+            signal = input("Press Enter to send packet...")
+            cb_received.clear()
 
-        channel.send_packet([0x01])
-        time.sleep(10)
-        rpm_log.stop()
-        pm_log.stop()
-        
-        # while True:
-        #     # input("Press Enter to continue...")
-        #     t = time.time
-        #     if (time.time - t == 1):
-        #         channel.send_packet([0x01])
+            if (signal == "0"):
+                channel.send_packet([0x00, 0x01])
+            elif (signal == "1"):
+                channel.send_packet([0x01, 0x00])
+
+    # cf.close_link()
 
 if __name__ == "__main__":
     simple_connect()
-
