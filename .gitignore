@@ -5,6 +5,8 @@ build/
 # Ignore generated docs
 *.dox
 *.wikidoc
+.vscode
+cache/
 
 # eclipse stuff
 .project
@@ -20,6 +22,9 @@ qtcreator-*
 *.user
 
 *~
+
+__pycache__/
+
 
 # Emacs
 .#*
