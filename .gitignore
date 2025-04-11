@@ -5,6 +5,8 @@ build/
 # Ignore generated docs
 *.dox
 *.wikidoc
+.vscode
+cache/
 
 # eclipse stuff
 .project

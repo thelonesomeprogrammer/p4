@@ -37,17 +37,30 @@
 #include "task.h"
 
 #include "param.h"
-#include "pm.h"
-
+#include "log.h"
 #include "app_channel.h"
 
+#include "pm.h"
+#include "estimator_kalman.h"
+#include "sensors_bmi088_bmp3xx.h"
+#include "sensors.h"
 
-struct testPacketRX {
+struct PacketRX {
   	bool start;
+	bool sample;
+} __attribute__((packed));
+
+struct PacketTX {
+	float batteryVoltage;
+	float pressure_max;
+	float pressure_min;
+	float pressure;
+	uint32_t procent;
 } __attribute__((packed));
 
 void appMain() {
-	struct testPacketRX rxPacket;
+	struct PacketRX rxPacket;
+	struct PacketTX txPacket;
 
 	paramVarId_t idmoterena = paramGetVarId("motorPowerSet", "enable");
 	paramSetInt(idmoterena, 1);
@@ -56,50 +69,64 @@ void appMain() {
 	paramVarId_t idm3 = paramGetVarId("motorPowerSet", "m3");
 	paramVarId_t idm4 = paramGetVarId("motorPowerSet", "m4");
 
+	logVarId_t pressure = logGetVarId("baro", "pressure");
+	// txPacket.pressure_max = logGetFloat(pressure);
+	// txPacket.pressure_min = logGetFloat(pressure);
+	
 	uint16_t max = 65534;
-	uint16_t procent = 50;
-	uint16_t mode = 4;
-	uint16_t thrust_value = (procent*max) / 100;
+	txPacket.procent = 0;
+	uint16_t thrust_value = (txPacket.procent*max) / 100;
 
-	// paramSetInt(idm1, thrust_value);
-	// paramSetInt(idm2, thrust_value);
-	// paramSetInt(idm3, thrust_value);
-	// paramSetInt(idm4, thrust_value);
   	while(1) {
 		if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), APPCHANNEL_WAIT_FOREVER)) {
+			
+			// Get battery voltage and pressure
+			txPacket.batteryVoltage = pmGetBatteryVoltage();
+			txPacket.pressure = logGetFloat(pressure);
 
-			// if (rxPacket.start) {
-			// 	thrust_value = (procent*max) / 100;
-			// }
-
-			if (mode == 0) {
-				paramSetInt(idm1, thrust_value);
-				paramSetInt(idm2, 0);
-				paramSetInt(idm3, 0);
-				paramSetInt(idm4, 0);
-			} else if (mode == 1) {
-				paramSetInt(idm1, 0);
-				paramSetInt(idm2, thrust_value);
-				paramSetInt(idm3, 0);
-				paramSetInt(idm4, 0);
-			} else if (mode == 2) {
-				paramSetInt(idm1, 0);
-				paramSetInt(idm2, 0);
-				paramSetInt(idm3, thrust_value);
-				paramSetInt(idm4, 0);
-			} else if (mode == 3) {
-				paramSetInt(idm1, 0);
-				paramSetInt(idm2, 0);
-				paramSetInt(idm3, 0);
-				paramSetInt(idm4, thrust_value);
-			} else if (mode == 4) {
-				paramSetInt(idm1, thrust_value);
-				paramSetInt(idm2, thrust_value);
-				paramSetInt(idm3, thrust_value);
-				paramSetInt(idm4, thrust_value);
+			if (rxPacket.sample){
+				if (txPacket.pressure_max < 100.0f) {
+					txPacket.pressure_max = txPacket.pressure;
+				}
+				if (txPacket.pressure_min < 100.0f) {
+					txPacket.pressure_min = txPacket.pressure;
+				}
+	
+				// Set asl bound
+				for (int i = 0; i < 1000; i++){
+					if (txPacket.pressure > txPacket.pressure_max){
+						txPacket.pressure_max = txPacket.pressure;
+					}
+					else if (txPacket.pressure < txPacket.pressure_min){
+						txPacket.pressure_min = txPacket.pressure;
+					}
+				}
 			}
 
-			appchannelSendDataPacket
+			if (rxPacket.start){
+				while (true)
+				{
+					vTaskDelay(1000);
+					txPacket.pressure = logGetFloat(pressure);
+					if (txPacket.pressure > txPacket.pressure_min){
+						txPacket.procent += 1;
+					}
+					else {
+						txPacket.procent = 0;
+					}
+					thrust_value = (txPacket.procent*max) / 100;
+	
+					paramSetInt(idm1, thrust_value);
+					paramSetInt(idm2, thrust_value);
+					paramSetInt(idm3, thrust_value);
+					paramSetInt(idm4, thrust_value);
+					appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
+				}
+			}
+			
+			// Send data packet to PC
+			appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
+			
     	}
   	}
 }
