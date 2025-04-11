@@ -76,8 +76,8 @@ void appMain() {
 		if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), APPCHANNEL_WAIT_FOREVER)) {
 
 			if (rxPacket.next) {
-				mode = 1;
-				if (mode == 1) {
+				mode = 4;
+				if (mode == 4) {
 					procent = (procent + 5) % 105;
 					new_value = (procent*max) / 100;
 				}
