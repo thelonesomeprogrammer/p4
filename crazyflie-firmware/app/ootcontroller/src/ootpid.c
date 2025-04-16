@@ -32,7 +32,7 @@ typedef struct {
   float output;
 } ootpid_t;
 
-ootpid_t ootpids[7];
+ootpid_t ootpids[14];
 
 void pidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
@@ -155,7 +155,7 @@ velocity is given in world frame
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
                          const sensorData_t *sensors, const state_t *state,
-                         const uint32_t tick) {
+                         const stabilizerStep_t tick) {
 
   control->controlMode = controlModeForceTorque;
 
@@ -178,4 +178,8 @@ void ootpidstep(ootpid_t *ootpid, float error, float dt) {
 
   // Save the last error
   ootpid->last_error = error;
+}
+
+void nonlinearTrackingController(control_t *control, const sensorData_t *sensors, const state_t *state, const stabilizerStep_t tick) {
+  
 }
