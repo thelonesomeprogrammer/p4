@@ -35,7 +35,7 @@ typedef struct {
 
 ootpid_t ootpids[7];
 
-void pidInit(ootpid_t *pid, float kp, float ki, float kd) {
+void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
   pid->ki = ki;
   pid->kd = kd;
@@ -47,20 +47,20 @@ void pidInit(ootpid_t *pid, float kp, float ki, float kd) {
 void controllerOutOfTreeInit() {
   DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
   // Initialize the PID controllers
-  pidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
-  pidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
-  pidInit(&ootpids[2], 1.0f, 0.1f, 0.01f);  // Yaw rate
-  pidInit(&ootpids[3], 1.0f, 0.1f, 0.01f);  // Thrust rate
-  pidInit(&ootpids[4], 1.0f, 0.1f, 0.01f);  // Roll
-  pidInit(&ootpids[5], 1.0f, 0.1f, 0.01f);  // Pitch
-  pidInit(&ootpids[6], 1.0f, 0.1f, 0.01f);  // Yaw
-  pidInit(&ootpids[7], 1.0f, 0.1f, 0.01f);  // Thrust
-  pidInit(&ootpids[8], 1.0f, 0.1f, 0.01f);  // X velocity
-  pidInit(&ootpids[9], 1.0f, 0.1f, 0.01f);  // Y velocity
-  pidInit(&ootpids[10], 1.0f, 0.1f, 0.01f); // Z velocity
-  pidInit(&ootpids[11], 1.0f, 0.1f, 0.01f); // X position
-  pidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
-  pidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
+  ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
+  ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
+  ootPidInit(&ootpids[2], 1.0f, 0.1f, 0.01f);  // Yaw rate
+  ootPidInit(&ootpids[3], 1.0f, 0.1f, 0.01f);  // Thrust rate
+  ootPidInit(&ootpids[4], 1.0f, 0.1f, 0.01f);  // Roll
+  ootPidInit(&ootpids[5], 1.0f, 0.1f, 0.01f);  // Pitch
+  ootPidInit(&ootpids[6], 1.0f, 0.1f, 0.01f);  // Yaw
+  ootPidInit(&ootpids[7], 1.0f, 0.1f, 0.01f);  // Thrust
+  ootPidInit(&ootpids[8], 1.0f, 0.1f, 0.01f);  // X velocity
+  ootPidInit(&ootpids[9], 1.0f, 0.1f, 0.01f);  // Y velocity
+  ootPidInit(&ootpids[10], 1.0f, 0.1f, 0.01f); // Z velocity
+  ootPidInit(&ootpids[11], 1.0f, 0.1f, 0.01f); // X position
+  ootPidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
+  ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
 }
 
 bool controllerOutOfTreeTest() { return true; }
