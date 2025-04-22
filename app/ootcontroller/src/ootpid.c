@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <stdint.h
+#include <stdint.h>
 #include <string.h>
 
 #include "app.h"
@@ -125,8 +125,10 @@ void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 
 void controllerOutOfTreeInit() {
   DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
+
   controllerBrescianiniInit();
   // controllerPidInit();
+
   // Initialize the PID controllers
   ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
   ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
@@ -143,6 +145,7 @@ void controllerOutOfTreeInit() {
   ootPidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
   ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
 }
+
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   const sensorData_t *sensors, const state_t *state,
@@ -167,7 +170,6 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
   // controllerPid(control, setpoint, sensors, state, stabilizerStep);
 }
-
 bool controllerOutOfTreeTest() { return true; }
 
 /*
@@ -204,6 +206,9 @@ different platforms. The normalized force API
         };
       };
     };
+
+    // controlModeForce
+    float normalizedForces[STABILIZER_NR_OF_MOTORS]; // 0.0 ... 1.0
   };
 
   control_mode_t controlMode;
@@ -226,10 +231,11 @@ typedef struct sensorData_s {
 ###############################################################
 ###############################################################state_t
 typedef struct state_s {
-  attitude_t attitude;      // deg (legacy CF2 body coordinate system, where
-pitch is inverted) quaternion_t attitudeQuaternion; point_t position;         //
+  attitude_t attitude;      // deg (legacy CF2 body coordinate system, where pitch is inverted) 
+  quaternion_t attitudeQuaternion; 
+  point_t position;
   velocity_t velocity;      // m/s
-        acc_t acc;                // Gs (but acc.z without considering gravity)
+  acc_t acc;                // Gs (but acc.z without considering gravity)
 } state_t;
 ###############################################################
 ###############################################################setpoint_t

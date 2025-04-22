@@ -133,3 +133,21 @@ RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pk
     ros-jazzy-ros-gz \
   && rm -rf /var/lib/apt/lists/*
 ENV DEBIAN_FRONTEND=
+
+###########################################
+# Full + rust image
+###########################################
+FROM full AS fullrust
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    libclang-dev \
+    tmux \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN pip install --break-system-packages pytest colcon-ros-cargo
+ENV DEBIAN_FRONTEND=
+
