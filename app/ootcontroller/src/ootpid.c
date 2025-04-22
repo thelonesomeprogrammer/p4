@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <stdint.h>
+#include <stdint.h
 #include <string.h>
 
 #include "app.h"
@@ -12,6 +12,7 @@
 #include "app_channel.h"
 #include "supervisor.h"
 #include "system.h"
+
 
 #define DEBUG_MODULE "ootpid"
 #include "debug.h"
@@ -45,7 +46,6 @@ int8_t test = 0;
 // quietly sleep.
 void appMain() {
   DEBUG_PRINT("Waiting for activation ...\n");
-
   // Wait for the system to be fully initialized
 	systemWaitStart();
 
@@ -113,16 +113,6 @@ void appMain() {
   }
 }
 
-// typedef struct {
-//   float kp;
-//   float ki;
-//   float kd;
-//   float integral;
-//   float last_error;
-//   float output;
-// } ootpid_t;
-
-// ootpid_t ootpids[7];
 
 void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
@@ -134,10 +124,9 @@ void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 }
 
 void controllerOutOfTreeInit() {
+  DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
   controllerBrescianiniInit();
   // controllerPidInit();
-
-  // DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
   // Initialize the PID controllers
   ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
   ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
@@ -184,9 +173,11 @@ bool controllerOutOfTreeTest() { return true; }
 /*
 #############################################################control_t
 ypedef enum control_mode_e {
-  controlModeLegacy      = 0, // legacy mode with int16_t roll, pitch, yaw and
-float thrust controlModeForceTorque = 1, controlModeForce       = 2, }
-control_mode_t;
+  controlModeLegacy      = 0,
+        controlModeForceTorque = 1,
+        controlModeForce       = 2,
+        }control_mode_t;
+
 
 typedef struct control_s {
   union {
@@ -213,9 +204,6 @@ different platforms. The normalized force API
         };
       };
     };
-
-    // controlModeForce
-    float normalizedForces[STABILIZER_NR_OF_MOTORS]; // 0.0 ... 1.0
   };
 
   control_mode_t controlMode;
@@ -240,8 +228,9 @@ typedef struct sensorData_s {
 typedef struct state_s {
   attitude_t attitude;      // deg (legacy CF2 body coordinate system, where
 pitch is inverted) quaternion_t attitudeQuaternion; point_t position;         //
-m velocity_t velocity;      // m/s acc_t acc;                // Gs (but acc.z
-without considering gravity) } state_t;
+  velocity_t velocity;      // m/s
+        acc_t acc;                // Gs (but acc.z without considering gravity)
+} state_t;
 ###############################################################
 ###############################################################setpoint_t
 typedef struct setpoint_s {

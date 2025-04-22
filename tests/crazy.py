@@ -42,6 +42,7 @@ def simple_connect():
         log_conf.add_variable("kalman.stateX", "float")
         log_conf.add_variable("kalman.stateY", "float")
         log_conf.add_variable("kalman.stateZ", "float")
+
         # log_conf.add_variable("ootpid.test", "uint8_t")
         #log_conf.add_variable("rpm", "float")
         #log_conf.add_variable("baro", "float")

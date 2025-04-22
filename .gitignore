@@ -32,3 +32,5 @@ __pycache__/
 # Colcon custom files
 COLCON_IGNORE
 AMENT_IGNORE
+
+.vscode/
