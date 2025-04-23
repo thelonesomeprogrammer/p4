@@ -172,7 +172,18 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
 }
 bool controllerOutOfTreeTest() { return true; }
 
+
+void estimatorOutOfTreeInit(void) {}
+
+bool estimatorOutOfTreeTest(void) { return true; }
+
+void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
+	// vicon position, velocity and so on
+}
+
 /*
+############################################################## stabilizerStep_t
+stabilizerStep_t = uint32_t
 #############################################################control_t
 ypedef enum control_mode_e {
   controlModeLegacy      = 0,
