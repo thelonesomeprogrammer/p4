@@ -25,11 +25,21 @@
 #include "controller_pid.h"
 
 struct PacketRX {
-	struct{float x, y, z;}position;
-	struct{float x, y, z;}velocity;
-	// struct{float x, y, z;}acceleration; // Removed acceleration to reduce data size
-	float yaw;
-	// float yawRate; // Removed yawRate to reduce data size
+  bool messageType;
+  struct{float x, y, z;}v1;
+  struct{float x, y, z;}v2;
+
+  // union
+  // {
+  //   struct{float x, y, z;}state_pos;
+  //   struct{float x, y, z;}state_att;
+  // }v1;
+
+  // union
+  // {
+  //   struct{float x, y, z;}state_vel;
+  //   struct{float x, y, z;}setpoint_pos;
+  // }v2;
 } __attribute__((packed));
 
 struct PacketTX {
@@ -40,7 +50,7 @@ struct PacketTX {
 } __attribute__((packed));
 
 setpoint_t mySetpoint;
-int8_t test = 0;
+state_t myState;
 
 // We need an appMain() function, but we will not really use it. Just let it
 // quietly sleep.
@@ -64,34 +74,36 @@ void appMain() {
   memset(&mySetpoint, 0, sizeof(setpoint_t));
 
   while (1) {
-    test += 1;
     if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), 0)) {
 			// Set all desired values used in controller
-      // mySetpoint.thrust = 20.0f;
 
-			mySetpoint.position.x = rxPacket.position.x;
-			mySetpoint.position.y = rxPacket.position.y;
-			mySetpoint.position.z = rxPacket.position.z;
+      if (rxPacket.messageType == false)
+      {
+        myState.position.x = rxPacket.v1.x;
+        myState.position.x = rxPacket.v1.y;
+        myState.position.x = rxPacket.v1.z;
 
-			mySetpoint.velocity.x = rxPacket.velocity.x;
-			mySetpoint.velocity.y = rxPacket.velocity.y;
-			mySetpoint.velocity.z = rxPacket.velocity.z;
+        myState.velocity.x = rxPacket.v2.x;
+        myState.velocity.y = rxPacket.v2.y;
+        myState.velocity.z = rxPacket.v2.z;
+      }
+      else if (rxPacket.messageType == true)
+      {
+        myState.attitude.roll = rxPacket.v1.x;
+        myState.attitude.pitch = -rxPacket.v1.y;
+        myState.attitude.yaw = rxPacket.v1.z;
 
-			// mySetpoint.acceleration.x = 0.1;
-			// mySetpoint.acceleration.y = 0.1;
-			// mySetpoint.acceleration.z = 0.1;
-
-			mySetpoint.attitude.yaw = rxPacket.yaw;
-			// mySetpoint.attitudeRate.yaw = 0;
-
+        mySetpoint.position.x = rxPacket.v2.x;
+			  mySetpoint.position.y = rxPacket.v2.y;
+			  mySetpoint.position.z = rxPacket.v2.z;
+      }
+      
       mySetpoint.mode.x = modeAbs;
       mySetpoint.mode.y = modeAbs;
       mySetpoint.mode.z = modeAbs;
-      // mySetpoint.mode.roll = modeAbs;
-      // mySetpoint.mode.pitch = modeAbs;
       mySetpoint.mode.yaw = modeAbs;
 
-			commanderSetSetpoint(&mySetpoint, 3);
+			commanderSetSetpoint(&mySetpoint, 3); 
     }
     txPacket.batteryVoltage = pmGetBatteryVoltage();
 
@@ -114,36 +126,36 @@ void appMain() {
 }
 
 
-void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
-  pid->kp = kp;
-  pid->ki = ki;
-  pid->kd = kd;
-  pid->integral = 0.0f;
-  pid->last_error = 0.0f;
-  pid->output = 0.0f;
-}
+// void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
+//   pid->kp = kp;
+//   pid->ki = ki;
+//   pid->kd = kd;
+//   pid->integral = 0.0f;
+//   pid->last_error = 0.0f;
+//   pid->output = 0.0f;
+// }
 
 void controllerOutOfTreeInit() {
   DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
 
-  controllerBrescianiniInit();
-  // controllerPidInit();
+  // controllerBrescianiniInit();
+  controllerPidInit();
 
   // Initialize the PID controllers
-  ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
-  ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
-  ootPidInit(&ootpids[2], 1.0f, 0.1f, 0.01f);  // Yaw rate
-  ootPidInit(&ootpids[3], 1.0f, 0.1f, 0.01f);  // Thrust rate
-  ootPidInit(&ootpids[4], 1.0f, 0.1f, 0.01f);  // Roll
-  ootPidInit(&ootpids[5], 1.0f, 0.1f, 0.01f);  // Pitch
-  ootPidInit(&ootpids[6], 1.0f, 0.1f, 0.01f);  // Yaw
-  ootPidInit(&ootpids[7], 1.0f, 0.1f, 0.01f);  // Thrust
-  ootPidInit(&ootpids[8], 1.0f, 0.1f, 0.01f);  // X velocity
-  ootPidInit(&ootpids[9], 1.0f, 0.1f, 0.01f);  // Y velocity
-  ootPidInit(&ootpids[10], 1.0f, 0.1f, 0.01f); // Z velocity
-  ootPidInit(&ootpids[11], 1.0f, 0.1f, 0.01f); // X position
-  ootPidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
-  ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
+  // ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
+  // ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
+  // ootPidInit(&ootpids[2], 1.0f, 0.1f, 0.01f);  // Yaw rate
+  // ootPidInit(&ootpids[3], 1.0f, 0.1f, 0.01f);  // Thrust rate
+  // ootPidInit(&ootpids[4], 1.0f, 0.1f, 0.01f);  // Roll
+  // ootPidInit(&ootpids[5], 1.0f, 0.1f, 0.01f);  // Pitch
+  // ootPidInit(&ootpids[6], 1.0f, 0.1f, 0.01f);  // Yaw
+  // ootPidInit(&ootpids[7], 1.0f, 0.1f, 0.01f);  // Thrust
+  // ootPidInit(&ootpids[8], 1.0f, 0.1f, 0.01f);  // X velocity
+  // ootPidInit(&ootpids[9], 1.0f, 0.1f, 0.01f);  // Y velocity
+  // ootPidInit(&ootpids[10], 1.0f, 0.1f, 0.01f); // Z velocity
+  // ootPidInit(&ootpids[11], 1.0f, 0.1f, 0.01f); // X position
+  // ootPidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
+  // ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
 }
 
 
@@ -167,18 +179,17 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
 
   // // commanderSetSetpoint(setpointPtr, 3);
 
-  controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
-  // controllerPid(control, setpoint, sensors, state, stabilizerStep);
+  // controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
+  controllerPid(control, setpoint, sensors, state, stabilizerStep);
 }
 bool controllerOutOfTreeTest() { return true; }
-
 
 void estimatorOutOfTreeInit(void) {}
 
 bool estimatorOutOfTreeTest(void) { return true; }
 
 void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
-	// vicon position, velocity and so on
+  state = &myState;
 }
 
 /*
@@ -300,7 +311,3 @@ velocity is given in world frame
 //   // Save the last error
 //   ootpid->last_error = error;
 // }
-
-LOG_GROUP_START(ootpid)
-LOG_ADD(LOG_UINT8, test, &test)
-LOG_GROUP_STOP(ootpid)
