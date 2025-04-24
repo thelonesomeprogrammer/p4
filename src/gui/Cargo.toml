@@ -1,0 +1,21 @@
+[package]
+name = "rust_stuff"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "web"
+path = "src/web.rs"
+
+
+[dependencies]
+rocket = { version = "0.5.0", features = ["json"]}
+serde = "1.0.195"
+surrealdb = { version = "1.1.0", features = ["kv-rocksdb"] }
+rust-embed = "8.3.0"
+rocket_ws = "0.1.0"
+ndarray = "0.15.6"
+rclrs = "*"
+std_msgs = "*"
+geometry_msgs = "*"
