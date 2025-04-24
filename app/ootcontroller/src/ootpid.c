@@ -1,130 +1,16 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
-#include "app.h"
+#include "oot_msg_types.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "param.h"
-#include "log.h"
-#include "app_channel.h"
-#include "supervisor.h"
-#include "system.h"
-
-
 #define DEBUG_MODULE "ootpid"
 #include "debug.h"
 
-#include "pm.h"
-#include "estimator_kalman.h"
-#include "commander.h"
 #include "controller.h"
-#include "controller_brescianini.h"
 #include "controller_pid.h"
-
-struct PacketRX {
-  bool messageType;
-  struct{float x, y, z;}v1;
-  struct{float x, y, z;}v2;
-
-  // union
-  // {
-  //   struct{float x, y, z;}state_pos;
-  //   struct{float x, y, z;}state_att;
-  // }v1;
-
-  // union
-  // {
-  //   struct{float x, y, z;}state_vel;
-  //   struct{float x, y, z;}setpoint_pos;
-  // }v2;
-} __attribute__((packed));
-
-struct PacketTX {
-	struct{float x, y, z;}position;
-	float batteryVoltage;
-  float cmd_thrust;
-	bool debugState;
-} __attribute__((packed));
-
-setpoint_t mySetpoint;
-state_t myState;
-
-// We need an appMain() function, but we will not really use it. Just let it
-// quietly sleep.
-void appMain() {
-  DEBUG_PRINT("Waiting for activation ...\n");
-  // Wait for the system to be fully initialized
-	systemWaitStart();
-
-  struct PacketRX rxPacket;
-	struct PacketTX txPacket;
-
-  logVarId_t x = logGetVarId("kalman", "stateX");
-  logVarId_t y = logGetVarId("kalman", "stateY");
-  logVarId_t z = logGetVarId("kalman", "stateZ");
-
-  // logVarId_t x = logGetVarId("ctrltarget", "x");
-  // logVarId_t y = logGetVarId("ctrltarget", "y");
-  // logVarId_t z = logGetVarId("ctrltarget", "z");
-  logVarId_t thrust = logGetVarId("controller", "cmd_thrust");
-  
-  memset(&mySetpoint, 0, sizeof(setpoint_t));
-
-  while (1) {
-    if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), 0)) {
-			// Set all desired values used in controller
-
-      if (rxPacket.messageType == false)
-      {
-        myState.position.x = rxPacket.v1.x;
-        myState.position.x = rxPacket.v1.y;
-        myState.position.x = rxPacket.v1.z;
-
-        myState.velocity.x = rxPacket.v2.x;
-        myState.velocity.y = rxPacket.v2.y;
-        myState.velocity.z = rxPacket.v2.z;
-      }
-      else if (rxPacket.messageType == true)
-      {
-        myState.attitude.roll = rxPacket.v1.x;
-        myState.attitude.pitch = -rxPacket.v1.y;
-        myState.attitude.yaw = rxPacket.v1.z;
-
-        mySetpoint.position.x = rxPacket.v2.x;
-			  mySetpoint.position.y = rxPacket.v2.y;
-			  mySetpoint.position.z = rxPacket.v2.z;
-      }
-      
-      mySetpoint.mode.x = modeAbs;
-      mySetpoint.mode.y = modeAbs;
-      mySetpoint.mode.z = modeAbs;
-      mySetpoint.mode.yaw = modeAbs;
-
-			commanderSetSetpoint(&mySetpoint, 3); 
-    }
-    txPacket.batteryVoltage = pmGetBatteryVoltage();
-
-    txPacket.position.x = logGetFloat(x);
-    txPacket.position.y = logGetFloat(y);
-    txPacket.position.z = logGetFloat(z);
-    txPacket.cmd_thrust = logGetFloat(thrust);
-
-    if (supervisorAreMotorsAllowedToRun()) {
-      txPacket.debugState = true;
-    } else {
-      txPacket.debugState = false;
-    }
-
-    // Send data packet to PC
-    appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-}
-
 
 // void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 //   pid->kp = kp;
@@ -158,39 +44,37 @@ void controllerOutOfTreeInit() {
   // ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
 }
 
-
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
-  const sensorData_t *sensors, const state_t *state,
-  const stabilizerStep_t stabilizerStep)
-{
-  // setpoint_t setpointCopy = *setpoint;
-
-  // setpointCopy.position.x = mySetpoint.position.x;
-  // setpointCopy.position.y = mySetpoint.position.y;
-  // setpointCopy.position.z = mySetpoint.position.z;
-
-  // setpointCopy.velocity.x = mySetpoint.velocity.x;
-  // setpointCopy.velocity.y = mySetpoint.velocity.y;
-  // setpointCopy.velocity.z = mySetpoint.velocity.z;
-
-  // setpointCopy.attitude.yaw = mySetpoint.attitude.yaw;
-
-  // const setpoint_t *setpointPtr = &setpointCopy;
-
-  // // commanderSetSetpoint(setpointPtr, 3);
-
-  // controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
+                         const sensorData_t *sensors, const state_t *state,
+                         const stabilizerStep_t stabilizerStep) {
   controllerPid(control, setpoint, sensors, state, stabilizerStep);
 }
+
+// void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
+//                          const sensorData_t *sensors, const state_t *state,
+//                          const stabilizerStep_t stabilizerStep)
+// {
+
+//   control->controlMode = controlModeLegacy;
+//   // Calculate the error
+// }
+
+// void ootpidstep(ootpid_t *ootpid, float error, float dt) {
+//   // Calculate the integral
+//   ootpid->integral += error * dt;
+
+//   // Calculate the derivative
+//   float derivative = (error - ootpid->last_error) / dt;
+
+//   // Calculate the and set the output
+//   ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral +
+//                    ootpid->kd * derivative;
+
+//   // Save the last error
+//   ootpid->last_error = error;
+// }
+
 bool controllerOutOfTreeTest() { return true; }
-
-void estimatorOutOfTreeInit(void) {}
-
-bool estimatorOutOfTreeTest(void) { return true; }
-
-void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
-  state = &myState;
-}
 
 /*
 ############################################################## stabilizerStep_t
@@ -253,11 +137,13 @@ typedef struct sensorData_s {
 ###############################################################
 ###############################################################state_t
 typedef struct state_s {
-  attitude_t attitude;      // deg (legacy CF2 body coordinate system, where pitch is inverted) 
-  quaternion_t attitudeQuaternion; 
-  point_t position;
-  velocity_t velocity;      // m/s
-  acc_t acc;                // Gs (but acc.z without considering gravity)
+  attitude_t attitude;
+        //(legacy CF2 body coordinate system, where pitch is inverted)
+        quaternion_t attitudeQuaternion;
+        point_t position;
+        velocity_t velocity;      // m/s
+        acc_t acc;                // Gs
+        //(but acc.z without considering gravity)
 } state_t;
 ###############################################################
 ###############################################################setpoint_t
@@ -287,27 +173,3 @@ velocity is given in world frame
 } setpoint_t;
 ###############################################################
 */
-
-// void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
-//                          const sensorData_t *sensors, const state_t *state,
-//                          const stabilizerStep_t stabilizerStep)
-// {
-  
-//   control->controlMode = controlModeLegacy;
-//   // Calculate the error
-// }
-
-// void ootpidstep(ootpid_t *ootpid, float error, float dt) {
-//   // Calculate the integral
-//   ootpid->integral += error * dt;
-
-//   // Calculate the derivative
-//   float derivative = (error - ootpid->last_error) / dt;
-
-//   // Calculate the and set the output
-//   ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral +
-//                    ootpid->kd * derivative;
-
-//   // Save the last error
-//   ootpid->last_error = error;
-// }
