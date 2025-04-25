@@ -10,26 +10,26 @@ from typing import List
 
 
 class DataPacket:
-    state_pos: List[float] = []
-    state_vel: List[float] = []
-    state_att: List[float] = []
-    setpoint_pos: List[float] = []
+    state_pos: List[float]
+    state_vel: List[float]
+    state_att: List[float]
+    setpoint_pos: List[float]
 
-    def __init__(self, state_pos = (0.0, 0.0, 0.0), state_vel = (0.0, 0.0, 0.0), state_att = (0.0, 0.0, 0.0), setpoint_pos = (0.0, 0.0, 0.0)):
-        self.state_pos.extend(state_pos)
-        self.state_vel.extend(state_vel)
-        self.state_att.extend(state_att)
-        self.setpoint_pos.extend(setpoint_pos)
+    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.0]):
+        self.state_pos = state_pos
+        self.state_vel = state_vel
+        self.state_att = state_att
+        self.setpoint_pos = setpoint_pos
 
     def returnType(self,msg_type):
         data = None
         match msg_type:
             case 1:
                 data = struct.pack('<b', False)
-                data += b''.join([struct.pack('<f', val) for val in self.state_pos + self.state_vel])
+                data += b''.join([struct.pack('<f', (val)) for val in tuple(self.state_pos) + tuple(self.state_vel) ])
             case 2:
                 data = struct.pack('<b', True)
-                data += b''.join([struct.pack('<f', val) for val in self.state_att + self.setpoint_pos])
+                data += b''.join([struct.pack('<f', (val)) for val in tuple(self.state_att) + tuple(self.setpoint_pos)])
         return data
 
 class ViconPositionNode(Node):
@@ -89,6 +89,7 @@ class ViconPositionNode(Node):
     def CFThread(self):
         while not self.exit:
             time.sleep(1)
+            self.link_pub.publish(Rbool(data = True))
             self.get_logger().info(
                 f"pack1: {self.dataPacket.returnType(1)}"
                 f"pack2: {self.dataPacket.returnType(2)}"

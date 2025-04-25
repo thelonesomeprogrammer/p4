@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use rocket::http::ContentType;
 use rocket::response::content::RawHtml;
-use rocket::response::stream::{Event, EventStream};
+use rocket::response::stream::TextStream;
 use rocket::serde::json::Json;
 use rocket::tokio;
 use rocket::tokio::time::{interval, Duration};
@@ -47,6 +47,7 @@ struct RosNode {
 struct Bot {
     current: Arc<Mutex<Pose>>,
     cf_connected: Arc<Mutex<bool>>,
+    resp: Arc<Mutex<String>>,
 }
 
 #[get("/")]
@@ -60,64 +61,39 @@ fn control(ws: rocket_ws::WebSocket, state: &State<RokctState>) -> rocket_ws::St
     let publisher = state.node.publisher.clone();
     rocket_ws::Stream! { ws =>
         for await message in ws {
-            match message {
-                Err(e) => yield format!("{e}").into(),
-                Ok(i) => {
-                    match i {
-                        Message::Text(string) => {
-                            let mut data = string.split(';');
-                            let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                            let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                            let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                            publisher
-                                .publish(&Point {
-                                    x,
-                                    y,
-                                    z,
-                                })
-                                .expect("pub");
+            match message? {
+                Message::Text(string) => {
+                    let mut data = string.split(';');
+                    let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                    let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                    let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                    publisher
+                        .publish(&Point {
+                            x,
+                            y,
+                            z,
+                        })
+                        .expect("pub");
 
-                        },
-                        Message::Binary(_data) => {},
-                        Message::Frame(_frame) => {},
-                        Message::Close(_opt)   => {},
-                        Message::Ping(_data)   => {},
-                        Message::Pong(_data)   => {},
-                    }
-                    yield "ok".to_string().into();
+                },
+                _ => {
+                    println!("Unknown message type");
+                    break;
                 }
             }
+            yield "ok".to_string().into();
         }
     }
 }
 
 #[get("/stream")]
-fn stream(state: &State<RokctState>) -> EventStream![] {
-    let pose = state.bot.current.clone();
-    let link = state.bot.cf_connected.clone();
-
-    EventStream! {
-        let link = link.clone();
-        let pose = pose.clone();
+fn stream(state: &State<RokctState>) -> TextStream![&str] {
+    let resp = state.bot.resp.clone();
+    TextStream! {
+        let link = resp.clone();
         let mut timer = interval(Duration::from_millis(100));
         loop {
-            {
-                let ori = pose.lock().unwrap().orientation.clone();
-                let rpy = [
-                    ori.x.atan2(ori.y),
-                    ori.y.atan2(ori.z),
-                    ori.z.atan2(ori.w),
-                ];
-                yield Event::data(format!("x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
-                    pose.lock().unwrap().position.x,
-                    pose.lock().unwrap().position.y,
-                    pose.lock().unwrap().position.z,
-                    rpy[0],
-                    rpy[1],
-                    rpy[2],
-                    link.lock().unwrap().clone(),
-                        ));
-            }
+            let mut resp = link.lock().unwrap().as_str();
             timer.tick().await;
         }
     }
@@ -151,12 +127,16 @@ async fn rocket() -> _ {
             w: 1.0,
         },
     }));
+    let resp = Arc::new(Mutex::new("".to_string()));
     let link = Arc::new(Mutex::new(false));
+    let link_c = link.clone();
 
     let current_c = current.clone();
+    let current_c2 = current.clone();
     let bot = Bot {
-        current: current.clone(),
+        current,
         cf_connected: link.clone(),
+        resp: resp.clone(),
     };
 
     let context = rclrs::Context::new(std::env::args()).expect("context");
@@ -185,6 +165,27 @@ async fn rocket() -> _ {
 
     let spin_node = node.node.clone();
 
+    std::thread::spawn(move || {
+        let link = link_c.clone();
+        let resp = resp.clone();
+        let pose = current_c2.clone();
+        loop {
+            let mut resp = resp.lock().unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let ori = pose.lock().unwrap().orientation.clone();
+            let rpy = [ori.x.atan2(ori.y), ori.y.atan2(ori.z), ori.z.atan2(ori.w)];
+            *resp = format!(
+                "x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
+                pose.lock().unwrap().position.x,
+                pose.lock().unwrap().position.y,
+                pose.lock().unwrap().position.z,
+                rpy[0],
+                rpy[1],
+                rpy[2],
+                link.lock().unwrap().clone(),
+            );
+        }
+    });
     std::thread::spawn(move || rclrs::spin(spin_node.clone()).unwrap());
     rocket::build()
         .manage(RokctState { node, bot })
