@@ -48,3 +48,6 @@
     url = https://github.com/ros2-rust/rosidl_runtime_rs.git
     branch = main
 
+[submodule "crazyflie-firmware"]
+	path = crazyflie-firmware
+	url = https://github.com/bitcraze/crazyflie-firmware.git
