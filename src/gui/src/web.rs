@@ -18,11 +18,10 @@ use rust_embed::RustEmbed;
 
 use rclrs::{Node, Publisher, Subscription};
 
-use geometry_msgs::msg::Point;
-use std_msgs::msg::String as StrMsg;
+use geometry_msgs::msg::{Point, Pose, Quaternion};
+use std_msgs::msg::Bool as Rbool;
 
 use std::borrow::Cow;
-use std::collections::vec_deque::VecDeque;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -31,7 +30,6 @@ use std::time::SystemTime;
 struct RokctState {
     bot: Bot,
     node: RosNode,
-    orderlist: Arc<Mutex<VecDeque<StrMsg>>>,
 }
 
 #[derive(RustEmbed)]
@@ -39,15 +37,16 @@ struct RokctState {
 struct Asset;
 
 struct RosNode {
-    subscription: Arc<Subscription<Point>>,
-    publisher: Arc<Publisher<StrMsg>>,
+    publisher: Arc<Publisher<Point>>,
+    pos_subscription: Arc<Subscription<Pose>>,
+    link_subscription: Arc<Subscription<Rbool>>,
     node: Arc<Node>,
 }
 
 #[derive(Clone)]
 struct Bot {
-    disired: Arc<Mutex<Point>>,
-    current: Arc<Mutex<Point>>,
+    current: Arc<Mutex<Pose>>,
+    cf_connected: Arc<Mutex<bool>>,
 }
 
 #[get("/")]
@@ -58,14 +57,27 @@ fn index() -> Option<RawHtml<Cow<'static, [u8]>>> {
 
 #[get("/control")]
 fn control(ws: rocket_ws::WebSocket, state: &State<RokctState>) -> rocket_ws::Stream!['static] {
-    let list = state.orderlist.clone();
+    let publisher = state.node.publisher.clone();
     rocket_ws::Stream! { ws =>
         for await message in ws {
             match message {
                 Err(e) => yield format!("{e}").into(),
                 Ok(i) => {
                     match i {
-                        Message::Text(string) => {(*list.lock().unwrap()).push_back(StrMsg{data:string});},
+                        Message::Text(string) => {
+                            let mut data = string.split(';');
+                            let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                            let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                            let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                            publisher
+                                .publish(&Point {
+                                    x,
+                                    y,
+                                    z,
+                                })
+                                .expect("pub");
+
+                        },
                         Message::Binary(_data) => {},
                         Message::Frame(_frame) => {},
                         Message::Close(_opt)   => {},
@@ -81,17 +93,29 @@ fn control(ws: rocket_ws::WebSocket, state: &State<RokctState>) -> rocket_ws::St
 
 #[get("/stream")]
 fn stream(state: &State<RokctState>) -> EventStream![] {
-    let point = state.bot.current.clone();
+    let pose = state.bot.current.clone();
+    let link = state.bot.cf_connected.clone();
 
     EventStream! {
-        let point = point.clone();
+        let link = link.clone();
+        let pose = pose.clone();
         let mut timer = interval(Duration::from_millis(100));
         loop {
             {
-                yield Event::data(format!("x:{};y:{};z:{};",
-                        point.lock().unwrap().x,
-                        point.lock().unwrap().y,
-                        point.lock().unwrap().z,
+                let ori = pose.lock().unwrap().orientation.clone();
+                let rpy = [
+                    ori.x.atan2(ori.y),
+                    ori.y.atan2(ori.z),
+                    ori.z.atan2(ori.w),
+                ];
+                yield Event::data(format!("x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
+                    pose.lock().unwrap().position.x,
+                    pose.lock().unwrap().position.y,
+                    pose.lock().unwrap().position.z,
+                    rpy[0],
+                    rpy[1],
+                    rpy[2],
+                    link.lock().unwrap().clone(),
                         ));
             }
             timer.tick().await;
@@ -114,49 +138,55 @@ fn dist(file: PathBuf) -> Option<(ContentType, Cow<'static, [u8]>)> {
 
 #[launch]
 async fn rocket() -> _ {
-    let disired = Arc::new(Mutex::new(Point {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
+    let current = Arc::new(Mutex::new(Pose {
+        position: Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        orientation: Quaternion {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 1.0,
+        },
     }));
-    let current = Arc::new(Mutex::new(Point {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-    }));
+    let link = Arc::new(Mutex::new(false));
 
     let current_c = current.clone();
     let bot = Bot {
-        disired: disired.clone(),
         current: current.clone(),
+        cf_connected: link.clone(),
     };
 
     let context = rclrs::Context::new(std::env::args()).expect("context");
     let node = Node::new(&context, "web").expect("1");
     let publisher = node
-        .create_publisher("out_topic", rclrs::QOS_PROFILE_DEFAULT)
+        .create_publisher("cf_command", rclrs::QOS_PROFILE_DEFAULT)
         .expect("pub");
-    let subscription = {
-        node.create_subscription("in_topic", rclrs::QOS_PROFILE_DEFAULT, move |msg: Point| {
+    let pos_subscription = {
+        node.create_subscription("cf_pos", rclrs::QOS_PROFILE_DEFAULT, move |msg: Pose| {
             *current_c.lock().unwrap() = msg.clone();
+        })
+        .expect("sub")
+    };
+    let link_subscription = {
+        node.create_subscription("cf_link", rclrs::QOS_PROFILE_DEFAULT, move |msg: Rbool| {
+            *link.lock().unwrap() = msg.data.clone();
         })
         .expect("sub")
     };
     let node = RosNode {
         node,
-        subscription,
         publisher,
+        pos_subscription,
+        link_subscription,
     };
 
-    let orderlist: Arc<Mutex<VecDeque<StrMsg>>> = Arc::new(Mutex::new(VecDeque::new()));
     let spin_node = node.node.clone();
 
     std::thread::spawn(move || rclrs::spin(spin_node.clone()).unwrap());
     rocket::build()
-        .manage(RokctState {
-            node,
-            bot,
-            orderlist,
-        })
+        .manage(RokctState { node, bot })
         .mount("/", routes![index, dist, control, stream])
 }

@@ -6,8 +6,8 @@ socket.addEventListener('close', (event) => { console.log('close', event.data) }
 const evtSource = new EventSource('http:/stream')
 evtSource.onmessage = (event) => {
   var msg = event.data
-  var msg = msg.split("grip_connect:")
-  document.getElementById('grip').textContent = msg[1]
+  var msg = msg.split("link:")
+  document.getElementById('link').textContent = msg[1]
   document.getElementById('cords').textContent = msg[0]
 }
 
@@ -30,26 +30,10 @@ function AddToProgramList2 (input) {
       points.push(value);
     }
     flag = 1
-  } else if (input.includes("grip")) {
-    let part = input.trim().replace("grip","").replace(":","").replace(";","")
-    let value = parseFloat(part.trim());
-    if (!isNaN(value)) {
-      points.push(value);
-    }
-    flag = 2
-  } else if (input.includes("movj")) {
-    let part = input.trim().replace("movj:","")
-    let parts = part.split(";")
-    if (parts.length < 1) {
-      if (parts[1].includes("speed:")) {
-
-      }
-    }
-    points = parseInput(input)
-  } else if (input.includes("movl")) {
+  } else if (input.includes("mov")) {
     let part = input.trim().replace("movl:","")
     points = parseInput(input)
-    flag = 3
+    flag = 2
   } else {
     points = parseInput(input)
   }
@@ -60,12 +44,10 @@ function AddToProgramList2 (input) {
   const pbut = document.createElement('button')
   const newp = document.createElement('p')
 
-  if (points.length == 6) {
-    newp.textContent = `t1:${points[0]};t2:${points[1]};t3:${points[2]};t4:${points[3]};t5:${points[4]};t6:${points[5]};`
+  if (points.length == 3) {
+    newp.textContent = `x:${points[0]};y:${points[1]};z:${points[2]};`
   } else if (flag == 1 && points.length == 1) {
     newp.textContent = `wait:${points[0]};`
-  } else if (flag == 2 && points.length == 1) {
-    newp.textContent = `grip:${points[0]};`
   } else {return;}
   rmbut.textContent = "X"
   pbut.textContent = "send"
