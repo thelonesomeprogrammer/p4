@@ -1,0 +1,17 @@
+<package format="3">
+  <name>cf_rust_gui</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="m@thelonesomeprogrammer.com">marrinus</maintainer>
+  <license>Apache-2.0</license>
+
+	<depend>rclrs</depend>
+	<depend>rosidl_generator_rs</depend>
+	<depend>std_msgs</depend>
+	<depend>geometry_msgs</depend>
+
+
+  <export>
+    <build_type>ament_cargo</build_type>
+  </export>
+</package>

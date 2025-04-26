@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="/dist/style.css">
+    <title>pissbot control</title>
+  </head>
+  <body>
+    <main>
+      <h1>Welcome to pissdrone control</h1>
+      <div class="main_div">
+        <div class="data_div">
+					<p>cf connected</p><p id="link" />
+          <p>the cf is currently at position<br>
+          <p id="cords"></p><br>
+          <p>the pissbot currently has angels<br>
+          <p id="angs"></p>
+          <p>request a new joint space position for the pissbot</p>
+          <input name="req" id="req" type=text></input>
+          <button onclick="AddToProgramList()">+</button><br>
+          <input type="file" name="file" id="file" />
+        </div>
+        <div class="program_container">
+          <h3>current program</h3>
+          <div class="program_div">
+            <ul id="list">
+            </ul>
+          </div>
+          <div class="button_container">
+            <button class="flush_button" onclick="flush()">send </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="/dist/js.js"></script>
+  </body>
+</html>

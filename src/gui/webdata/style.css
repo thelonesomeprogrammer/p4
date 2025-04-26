@@ -1,0 +1,167 @@
+/* Reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+/* Header styles */
+h1 {
+  padding: 30px;
+  text-align: center;
+  color: #4CAF50;
+}
+
+/* Main container styles */
+.main_div {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+/* Left container styles */
+.data_div {
+  width: 40vw;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.data_div p {
+  margin-bottom: 10px;
+}
+
+.data_div input[type="text"] {
+  width: 80%;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.data_div button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.data_div button:hover {
+  background-color: #45a049;
+}
+
+.data_div input[type="file"] {
+  margin-top: 10px;
+  width:80%;
+}
+
+/* Right container styles */
+.program_container {
+  width: 40vw;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.program_container h3 {
+  padding-bottom: 10px;
+  color: #4CAF50;
+}
+
+.program_div {
+  border: 2px solid #4CAF50;
+  border-radius: 10px;
+  min-height: 100px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+ul {
+  list-style: none;
+}
+
+li {
+  display: flex;
+  cursor:move;
+  border-bottom:solid 3px #f2f2f2;
+  border-top:solid 3px #f2f2f2;
+  padding: 10px;
+  margin-bottom: 5px;
+  background-color: #f2f2f2;
+  border-radius: 5px;
+}
+
+.button_container{
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Button styles */
+.flush_button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.flush_button:hover {
+  background-color: #45a049;
+}
+
+.panic_button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  background-color: #e52323;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.panic_button:hover {
+  background-color: #ffa049;
+}
+
+li p {
+  flex: 1;
+}
+
+li button {
+  margin:0px 5px;
+  padding: 5px 10px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.send_button{
+  background-color:#4CAF50;
+}
+.send_button:hover {
+  background-color: #45a049;
+}
+
+.rm_button:hover {
+  background-color: #e74c3c;
+}
+
+.rm_button{
+  background-color: #ff6347;
+
+}

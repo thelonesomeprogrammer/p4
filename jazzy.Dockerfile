@@ -151,3 +151,13 @@ ENV PATH=/root/.cargo/bin:$PATH
 RUN pip install --break-system-packages pytest colcon-ros-cargo
 ENV DEBIAN_FRONTEND=
 
+###########################################
+# Full + rust + rocket imagel
+###########################################
+FROM fullrust AS fullrustrocket
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ROCKET_ADDRESS=0.0.0.0
+RUN mkdir /workdir/
+WORKDIR /workdir/
+
+
