@@ -1,15 +1,20 @@
-const socket = new WebSocket('ws:localhost:8000/control')
-socket.addEventListener('open', (event) => { console.log('open', event.data) })
-socket.addEventListener('message', (event) => { console.log('msg', event.data) })
-socket.addEventListener('close', (event) => { console.log('close', event.data) })
+setInterval(async () => {
+	try {
+		const response = await fetch('/streams');
+		if (!response.ok) {
+			throw new Error('Network response was not ok');
+		}
+		const data = await response.text();
+		var msg = data.split("link:")
+		document.getElementById('link').textContent = msg[1]
+		document.getElementById('cords').textContent = msg[0]
+		console.log(data);
+	} catch (error) {
+		console.error('Fetch error:', error);
+	}
+}, 1000);
 
-const evtSource = new EventSource('http:/stream')
-evtSource.onmessage = (event) => {
-  var msg = event.data
-  var msg = msg.split("link:")
-  document.getElementById('link').textContent = msg[1]
-  document.getElementById('cords').textContent = msg[0]
-}
+
 
 
 function AddToProgramList () {
@@ -61,12 +66,12 @@ function AddToProgramList2 (input) {
   porglist.appendChild(newli)
 }
 
-function senditbro(but){
+async function senditbro(but){
   const li = but.parentNode
     if (li.firstChild !=null) {
       const p = li.firstChild
       console.log(p.textContent)
-      socket.send(p.textContent)
+			const response = await fetch('/control', { method: 'POST', body: p.textContent});
   }
 }
 
@@ -90,20 +95,6 @@ document.getElementById('file').onchange = function() {
   reader.readAsText(file);
 };
 
-
-function flush() {
-  const porglist = document.getElementById('list')
-  porglist.childNodes.forEach(li => {
-    if (li.firstChild !=null) {
-      const p = li.firstChild
-      console.log(p.textContent)
-      socket.send(p.textContent)
-  }})
-}
-
-function stopbot () {
-  socket.send("stop")
-}
 
 function parseInput(input) {
   let values = [];

@@ -5,14 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use rocket::http::ContentType;
 use rocket::response::content::RawHtml;
-use rocket::response::stream::TextStream;
-use rocket::serde::json::Json;
 use rocket::tokio;
 use rocket::tokio::time::{interval, Duration};
 use rocket::State;
-
-use rocket_ws;
-use rocket_ws::Message;
 
 use rust_embed::RustEmbed;
 
@@ -56,47 +51,25 @@ fn index() -> Option<RawHtml<Cow<'static, [u8]>>> {
     Some(RawHtml(asset.data))
 }
 
-#[get("/control")]
-fn control(ws: rocket_ws::WebSocket, state: &State<RokctState>) -> rocket_ws::Stream!['static] {
-    let publisher = state.node.publisher.clone();
-    rocket_ws::Stream! { ws =>
-        for await message in ws {
-            match message? {
-                Message::Text(string) => {
-                    let mut data = string.split(';');
-                    let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                    let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                    let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                    publisher
-                        .publish(&Point {
-                            x,
-                            y,
-                            z,
-                        })
-                        .expect("pub");
-
-                },
-                _ => {
-                    println!("Unknown message type");
-                    break;
-                }
-            }
-            yield "ok".to_string().into();
-        }
-    }
+#[post("/control", data = "<point>")]
+fn control(point: String, state: &State<RokctState>) {
+    let mut data = point.split(';').filter_map(|s| s.split(':').nth(1));
+    let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+    let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+    let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+    state.node.publisher.clone().publish(&Point { x, y, z });
 }
 
-#[get("/stream")]
-fn stream(state: &State<RokctState>) -> TextStream![&str] {
-    let resp = state.bot.resp.clone();
-    TextStream! {
-        let link = resp.clone();
-        let mut timer = interval(Duration::from_millis(100));
-        loop {
-            let mut resp = link.lock().unwrap().as_str();
-            timer.tick().await;
-        }
-    }
+#[get("/streams")]
+fn stream(state: &State<RokctState>) -> String {
+    let pose = state.bot.current.clone().lock().unwrap().clone();
+    let link = state.bot.cf_connected.clone().lock().unwrap().clone();
+    let ori = pose.orientation.clone();
+    let rpy = [ori.x.atan2(ori.y), ori.y.atan2(ori.z), ori.z.atan2(ori.w)];
+    return format!(
+        "x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
+        pose.position.x, pose.position.y, pose.position.z, rpy[0], rpy[1], rpy[2], link,
+    );
 }
 
 #[get("/dist/<file..>")]
@@ -165,27 +138,6 @@ async fn rocket() -> _ {
 
     let spin_node = node.node.clone();
 
-    std::thread::spawn(move || {
-        let link = link_c.clone();
-        let resp = resp.clone();
-        let pose = current_c2.clone();
-        loop {
-            let mut resp = resp.lock().unwrap();
-            std::thread::sleep(std::time::Duration::from_millis(100));
-            let ori = pose.lock().unwrap().orientation.clone();
-            let rpy = [ori.x.atan2(ori.y), ori.y.atan2(ori.z), ori.z.atan2(ori.w)];
-            *resp = format!(
-                "x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
-                pose.lock().unwrap().position.x,
-                pose.lock().unwrap().position.y,
-                pose.lock().unwrap().position.z,
-                rpy[0],
-                rpy[1],
-                rpy[2],
-                link.lock().unwrap().clone(),
-            );
-        }
-    });
     std::thread::spawn(move || rclrs::spin(spin_node.clone()).unwrap());
     rocket::build()
         .manage(RokctState { node, bot })

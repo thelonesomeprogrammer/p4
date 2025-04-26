@@ -10,7 +10,7 @@ path = "src/web.rs"
 
 
 [dependencies]
-rocket = { version = "0.5.1", features = ["json"]}
+rocket = { version = "0.5.1"}
 serde = "1.0.195"
 rust-embed = "8.3.0"
 rocket_ws = "0.1.1"
