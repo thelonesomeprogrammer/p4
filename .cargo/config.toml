@@ -34,6 +34,12 @@ path = "/workdir/install/cf_rust_gui/share/rust_stuff/rust"
 [patch.crates-io.cf_rust_gui]
 path = "/workdir/install/cf_rust_gui/share/cf_rust_gui/rust"
 
+[patch.crates-io.cf_rust_gui]
+path = "/workdir/install/cf_rust_gui/share/cf_rust_gui/rust"
+
+[patch.crates-io.rust_stuff]
+path = "/workdir/install/cf_rust_gui/share/rust_stuff/rust"
+
 [patch.crates-io.geometry_msgs]
 path = "/workdir/install/geometry_msgs/share/geometry_msgs/rust"
 

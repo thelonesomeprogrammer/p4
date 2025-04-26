@@ -15,8 +15,6 @@ setInterval(async () => {
 }, 1000);
 
 
-
-
 function AddToProgramList () {
   var val = document.getElementById('req').value
   AddToProgramList2(val)
@@ -94,7 +92,6 @@ document.getElementById('file').onchange = function() {
   };
   reader.readAsText(file);
 };
-
 
 function parseInput(input) {
   let values = [];
