@@ -30,9 +30,9 @@ void appMain() {
   struct PacketRX rxPacket;
   struct PacketTX txPacket;
 
-  logVarId_t x = logGetVarId("kalman", "stateX");
-  logVarId_t y = logGetVarId("kalman", "stateY");
-  logVarId_t z = logGetVarId("kalman", "stateZ");
+  // logVarId_t x = logGetVarId("kalman", "stateX");
+  // logVarId_t y = logGetVarId("kalman", "stateY");
+  // logVarId_t z = logGetVarId("kalman", "stateZ");
 
   // logVarId_t x = logGetVarId("ctrltarget", "x");
   // logVarId_t y = logGetVarId("ctrltarget", "y");
@@ -47,8 +47,8 @@ void appMain() {
 
       if (rxPacket.messageType == false) {
         myState.position.x = rxPacket.v1.x;
-        myState.position.x = rxPacket.v1.y;
-        myState.position.x = rxPacket.v1.z;
+        myState.position.y = rxPacket.v1.y;
+        myState.position.z = rxPacket.v1.z;
 
         myState.velocity.x = rxPacket.v2.x;
         myState.velocity.y = rxPacket.v2.y;
@@ -72,9 +72,12 @@ void appMain() {
     }
     txPacket.batteryVoltage = pmGetBatteryVoltage();
 
-    txPacket.position.x = logGetFloat(x);
-    txPacket.position.y = logGetFloat(y);
-    txPacket.position.z = logGetFloat(z);
+    // txPacket.position.x = logGetFloat(x);
+    // txPacket.position.y = logGetFloat(y);
+    // txPacket.position.z = logGetFloat(z);
+    txPacket.position.x = mySetpoint.position.x;
+    txPacket.position.y = mySetpoint.position.y;
+    txPacket.position.z = mySetpoint.position.z;
     txPacket.cmd_thrust = logGetFloat(thrust);
 
     if (supervisorAreMotorsAllowedToRun()) {
@@ -104,9 +107,10 @@ stabilizerStep_t = uint32_t
 ###############################################################state_t
 typedef struct state_s {
   attitude_t attitude;      // deg (legacy CF2 body coordinate system, where
-pitch is inverted) quaternion_t attitudeQuaternion; point_t position; velocity_t
-velocity;      // m/s acc_t acc;                // Gs (but acc.z without
-considering gravity) } state_t;
+pitch is inverted) quaternion_t Quaternion; point_t position;
+velocity_tvelocity;      // m/s
+acc_t acc;                // Gs (but acc.z without considering gravity)
+} state_t;
 ###############################################################
 ###############################################################setpoint_t
 typedef struct setpoint_s {

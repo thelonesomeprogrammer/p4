@@ -56,7 +56,6 @@ class ViconPositionNode(Node):
         self.exit = False
         self.cf_init()
 
-
     def cf_init(self):
         self.cb_received = threading.Event()
 
@@ -140,7 +139,7 @@ class ViconPositionNode(Node):
             time.sleep(1)
             if self.channel is None or self.dataPacket is None:
                 return
-            self.loc.send_extpose(self.pos,self.quat)
+            #self.loc.send_extpose(self.pos,self.quat)
             self.channel.send_packet(self.dataPacket.returnType(1))
             self.channel.send_packet(self.dataPacket.returnType(2))
 
