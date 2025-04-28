@@ -129,8 +129,9 @@ class ViconPositionNode(Node):
             time.sleep(1)
             if self.channel is None or self.dataPacket is None:
                 return
-            self.channel.send_packet(self.returnType(1))
-            self.channel.send_packet(self.returnType(2))
+              
+            self.channel.send_packet(self.dataPacket.returnType(1))
+            self.channel.send_packet(self.dataPacket.returnType(2))
 
     def appchannel_callback(self,data):
         self.get_logger().info(
