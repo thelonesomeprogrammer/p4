@@ -51,7 +51,7 @@ class ViconPositionNode(Node):
         self.cmd_pos = [0.0, 0.0, 0.0]
         self.dataPacket = DataPacket()
         self.exit = False
-
+        self.cf_init()
 
     def cf_init(self):
         self.cb_received = threading.Event()

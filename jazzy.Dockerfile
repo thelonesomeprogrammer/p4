@@ -160,4 +160,8 @@ ENV ROCKET_ADDRESS=0.0.0.0
 RUN mkdir /workdir/
 WORKDIR /workdir/
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
+ENV DEBIAN_FRONTEND=
