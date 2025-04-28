@@ -15,26 +15,26 @@ from cflib.crazyflie.appchannel import Appchannel
 
 
 class DataPacket:
-    state_pos: List[float] = []
-    state_vel: List[float] = []
-    state_att: List[float] = []
-    setpoint_pos: List[float] = []
+    state_pos: List[float]
+    state_vel: List[float]
+    state_att: List[float]
+    setpoint_pos: List[float]
 
-    def __init__(self, state_pos = (0.0, 0.0, 0.0), state_vel = (0.0, 0.0, 0.0), state_att = (0.0, 0.0, 0.0), setpoint_pos = (0.0, 0.0, 0.0)):
-        self.state_pos.extend(state_pos)
-        self.state_vel.extend(state_vel)
-        self.state_att.extend(state_att)
-        self.setpoint_pos.extend(setpoint_pos)
+    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.5]):
+        self.state_pos = state_pos
+        self.state_vel = state_vel
+        self.state_att = state_att
+        self.setpoint_pos = setpoint_pos
 
     def returnType(self,msg_type):
         data = None
         match msg_type:
             case 1:
                 data = struct.pack('<b', False)
-                data += b''.join([struct.pack('<f', val) for val in self.state_pos + self.state_vel])
+                data += b''.join([struct.pack('<f', (val)) for val in tuple(self.state_pos) + tuple(self.state_vel) ])
             case 2:
                 data = struct.pack('<b', True)
-                data += b''.join([struct.pack('<f', val) for val in self.state_att + self.setpoint_pos])
+                data += b''.join([struct.pack('<f', (val)) for val in tuple(self.state_att) + tuple(self.setpoint_pos)])
         return data
 
 class ViconPositionNode(Node):
@@ -46,9 +46,12 @@ class ViconPositionNode(Node):
         self.pos_pub = self.create_publisher(Pose, 'cf_pos', 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_resived, 20)
         self.threads = [threading.Thread(target=self.rlcThread),threading.Thread(target=self.CFThread)]
-        self.lasttime = rclpy.time.Time()
+        self.lasttime = 0.0
         self.lastpos = [0.0, 0.0, 0.0]
-        self.cmd_pos = [0.0, 0.0, 0.0]
+        self.cmd_pos = [0.0, 0.0, 0.5]
+
+        self.pos = [0,0,0]
+        self.quat = [0,0,0,0]
         self.dataPacket = DataPacket()
         self.exit = False
         self.cf_init()
@@ -72,6 +75,8 @@ class ViconPositionNode(Node):
 
     def runThreads(self):
         self.threads[0].start()
+        for i in range(20):
+            time.sleep(0.1)
         self.threads[1].start()
 
     def joinThreads(self):
@@ -86,20 +91,25 @@ class ViconPositionNode(Node):
         
 
     def timer_callback(self):
-        time = rclpy.time.Time()
         try:
             trans: TransformStamped = self.tf_buffer.lookup_transform(
-                'world', 'Group466CF', time
+                'world', 'Group466CF', rclpy.time.Time()
             )
         except Exception:
             return  # Wait for valid transform
         pos = trans.transform.translation
         rot = trans.transform.rotation
+        time = float(float(trans.header.stamp.sec) + float(trans.header.stamp.nanosec)/10**9)
         quat = [rot.x, rot.y, rot.z, rot.w]
         rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
         roll, pitch, yaw = rpy
 
+        self.pos = [pos.x,pos.y,pos.z]
+        self.quat = quat
+
         dt = time - self.lasttime
+        if dt == 0:
+            return
         self.lasttime = time
 
         state_pos = (pos.x, pos.y, pos.z)
@@ -114,10 +124,10 @@ class ViconPositionNode(Node):
 
         self.pos_pub.publish(msg)
 
-        self.get_logger().info(
-            f"x: {pos.x:.3f}, y: {pos.y:.3f}, z: {pos.z:.3f} | "
-            f"roll: {roll:.1f}°, pitch: {pitch:.1f}°, yaw: {yaw:.1f}°"
-        )
+        #self.get_logger().info(
+        #    f"x: {pos.x:.3f}, y: {pos.y:.3f}, z: {pos.z:.3f} | "
+        #    f"roll: {roll:.1f}°, pitch: {pitch:.1f}°, yaw: {yaw:.1f}°"
+        #)
     
     def rlcThread(self):
         rclpy.spin(self)
@@ -129,7 +139,7 @@ class ViconPositionNode(Node):
             time.sleep(1)
             if self.channel is None or self.dataPacket is None:
                 return
-              
+            #self.loc.send_extpose(self.pos,self.quat)
             self.channel.send_packet(self.dataPacket.returnType(1))
             self.channel.send_packet(self.dataPacket.returnType(2))
 
