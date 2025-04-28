@@ -1,83 +1,20 @@
-[patch.crates-io.rosidl_runtime_rs]
-path = "/workdir/install/rosidl_runtime_rs/share/rosidl_runtime_rs/rust"
-
-[patch.crates-io.visualization_msgs]
-path = "/workdir/install/visualization_msgs/share/visualization_msgs/rust"
-
-[patch.crates-io.trajectory_msgs]
-path = "/workdir/install/trajectory_msgs/share/trajectory_msgs/rust"
-
-[patch.crates-io.test_msgs]
-path = "/workdir/install/test_msgs/share/test_msgs/rust"
-
-[patch.crates-io.stereo_msgs]
-path = "/workdir/install/stereo_msgs/share/stereo_msgs/rust"
-
-[patch.crates-io.std_srvs]
-path = "/workdir/install/std_srvs/share/std_srvs/rust"
-
-[patch.crates-io.shape_msgs]
-path = "/workdir/install/shape_msgs/share/shape_msgs/rust"
-
-[patch.crates-io.sensor_msgs]
-path = "/workdir/install/sensor_msgs/share/sensor_msgs/rust"
-
-[patch.crates-io.nav_msgs]
-path = "/workdir/install/nav_msgs/share/nav_msgs/rust"
-
-[patch.crates-io.diagnostic_msgs]
-path = "/workdir/install/diagnostic_msgs/share/diagnostic_msgs/rust"
-
-[patch.crates-io.rust_stuff]
-path = "/workdir/install/cf_rust_gui/share/rust_stuff/rust"
-
-[patch.crates-io.cf_rust_gui]
-path = "/workdir/install/cf_rust_gui/share/cf_rust_gui/rust"
-
-[patch.crates-io.cf_rust_gui]
-path = "/workdir/install/cf_rust_gui/share/cf_rust_gui/rust"
-
-[patch.crates-io.rust_stuff]
-path = "/workdir/install/cf_rust_gui/share/rust_stuff/rust"
-
 [patch.crates-io.geometry_msgs]
-path = "/workdir/install/geometry_msgs/share/geometry_msgs/rust"
-
-[patch.crates-io.actionlib_msgs]
-path = "/workdir/install/actionlib_msgs/share/actionlib_msgs/rust"
+path = "/home/arafi/p4/install/geometry_msgs/share/geometry_msgs/rust"
 
 [patch.crates-io.std_msgs]
-path = "/workdir/install/std_msgs/share/std_msgs/rust"
-
-[patch.crates-io.statistics_msgs]
-path = "/workdir/install/statistics_msgs/share/statistics_msgs/rust"
-
-[patch.crates-io.rosgraph_msgs]
-path = "/workdir/install/rosgraph_msgs/share/rosgraph_msgs/rust"
-
-[patch.crates-io.composition_interfaces]
-path = "/workdir/install/composition_interfaces/share/composition_interfaces/rust"
-
-[patch.crates-io.rcl_interfaces]
-path = "/workdir/install/rcl_interfaces/share/rcl_interfaces/rust"
-
-[patch.crates-io.lifecycle_msgs]
-path = "/workdir/install/lifecycle_msgs/share/lifecycle_msgs/rust"
-
-[patch.crates-io.example_interfaces]
-path = "/workdir/install/example_interfaces/share/example_interfaces/rust"
+path = "/home/arafi/p4/install/std_msgs/share/std_msgs/rust"
 
 [patch.crates-io.action_msgs]
-path = "/workdir/install/action_msgs/share/action_msgs/rust"
-
-[patch.crates-io.unique_identifier_msgs]
-path = "/workdir/install/unique_identifier_msgs/share/unique_identifier_msgs/rust"
-
-[patch.crates-io.type_description_interfaces]
-path = "/workdir/install/type_description_interfaces/share/type_description_interfaces/rust"
+path = "/home/arafi/p4/install/action_msgs/share/action_msgs/rust"
 
 [patch.crates-io.service_msgs]
-path = "/workdir/install/service_msgs/share/service_msgs/rust"
+path = "/home/arafi/p4/install/service_msgs/share/service_msgs/rust"
+
+[patch.crates-io.unique_identifier_msgs]
+path = "/home/arafi/p4/install/unique_identifier_msgs/share/unique_identifier_msgs/rust"
 
 [patch.crates-io.builtin_interfaces]
-path = "/workdir/install/builtin_interfaces/share/builtin_interfaces/rust"
+path = "/home/arafi/p4/install/builtin_interfaces/share/builtin_interfaces/rust"
+
+[patch.crates-io.rosidl_runtime_rs]
+path = "/home/arafi/p4/install/rosidl_runtime_rs/share/rosidl_runtime_rs/rust"
