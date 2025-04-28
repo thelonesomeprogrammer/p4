@@ -1,0 +1,133 @@
+/* Base Styles - Reset and Global Settings */
+* {
+  margin: 0; /* Removes default margins */
+  padding: 0; /* Removes default padding */
+  box-sizing: border-box; /* Ensures consistent box model */
+}
+
+body {
+  font-family: Arial, sans-serif; /* Sets a clean, readable font */
+  background-color: #f9f9f9; /* Light gray background */
+  color: #333; /* Dark gray for text */
+  line-height: 1.6; /* Improves readability */
+}
+
+/* Header - Main Title */
+h1 {
+  text-align: center; /* Centers the title */
+  color: #4CAF50; /* Green color for the main header */
+  margin: 20px 0; /* Adds vertical space around the header */
+}
+
+/* Main Layout - Flexbox Container */
+.main_div {
+  display: flex; /* Aligns child elements horizontally */
+  justify-content: space-between; /* Adds space between the left and right panels */
+  gap: 20px; /* Adds spacing between panels */
+  padding: 20px;
+}
+
+/* Left Section - Connection and Input */
+.data_div,
+.program_container {
+  flex: 1; /* Ensures both sections take equal width */
+  padding: 20px; /* Adds space inside the section */
+  background-color: #fff; /* Gives a clean white background */
+  border-radius: 10px; /* Rounds the corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+}
+
+.data_div p {
+  margin-bottom: 10px; /* Adds spacing between paragraphs */
+}
+
+.data_div input[type="text"], /* Text input styling */
+.data_div input[type="file"] { /* File input styling */
+  width: 100%; /* Full width inputs */
+  padding: 10px; /* Adds inner spacing */
+  margin-top: 10px; /* Adds space above input */
+  border: 1px solid #ccc; /* Light gray border */
+  border-radius: 5px; /* Rounded input fields */
+}
+
+.data_div button {
+  display: block; /* Buttons appear on their own line */
+  background-color: #4CAF50; /* Primary button color */
+  color: #fff; /* White text */
+  border: none; /* Removes default border */
+  padding: 10px 15px; /* Inner spacing for the button */
+  margin-top: 10px; /* Adds space above button */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Indicates the button is clickable */
+  transition: background-color 0.3s ease; /* Smooth color change on hover */
+}
+
+.data_div button:hover {
+  background-color: #45a049; /* Slightly darker green on hover */
+}
+
+/* Right Section - Program Set Points */
+.program_container h3 {
+  color: #4CAF50; /* Matches the header color for consistency */
+  margin-bottom: 10px; /* Adds space below the title */
+}
+
+.program_div {
+  border: 2px solid #4CAF50; /* Green border to highlight the section */
+  border-radius: 10px; /* Rounded corners */
+  padding: 10px; /* Inner spacing */
+  min-height: 150px; /* Ensures a minimum height */
+  overflow-y: auto; /* Allows scrolling if content overflows */
+}
+
+/* List of Set Points */
+ul {
+  list-style: none; /* Removes bullets from the list */
+  padding: 0; /* Removes default padding */
+}
+
+li {
+  display: flex; /* Aligns content horizontally */
+  justify-content: space-between; /* Evenly spaces the content */
+  align-items: center; /* Vertically aligns items */
+  padding: 10px; /* Inner spacing */
+  margin-bottom: 10px; /* Space between list items */
+  background-color: #f2f2f2; /* Light gray background for list items */
+  border-radius: 5px; /* Rounded corners */
+}
+
+li p {
+  flex-grow: 1; /* Ensures the text takes up available space */
+  margin-right: 10px; /* Space between text and buttons */
+}
+
+/* Buttons inside List Items */
+li button {
+  padding: 5px 10px; /* Smaller buttons */
+  border: none; /* Removes default border */
+  border-radius: 5px; /* Rounded corners */
+  color: #fff; /* White text */
+  cursor: pointer; /* Indicates button is clickable */
+}
+
+li .rm_button {
+  background-color: #ff6347; /* Red button for remove action */
+}
+
+li .rm_button:hover {
+  background-color: #e74c3c; /* Darker red on hover */
+}
+
+li .send_button {
+  background-color: #4CAF50; /* Green button for send action */
+}
+
+li .send_button:hover {
+  background-color: #45a049; /* Darker green on hover */
+}
+
+/* Drag-and-Drop Styles for List Items */
+li.dragging {
+  opacity: 0.5; /* Makes the dragged item semi-transparent */
+  border: 2px dashed #4CAF50; /* Dashed border for feedback */
+}

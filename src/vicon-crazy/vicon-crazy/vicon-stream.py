@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from tf2_ros import TransformListener, Buffer
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Point, Pose
 from scipy.spatial.transform import Rotation as R
 
 import time
@@ -43,12 +43,15 @@ class ViconPositionNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.timer = self.create_timer(0.01, self.timer_callback)  # 100 Hz
+        self.pos_pub = self.create_publisher(Pose, 'cf_pos', 20)
+        self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_resived, 20)
         self.threads = [threading.Thread(target=self.rlcThread),threading.Thread(target=self.CFThread)]
         self.lasttime = rclpy.time.Time()
         self.lastpos = [0.0, 0.0, 0.0]
-        self.dataPacket = DataPacket(setpoint_pos = (0.0,0.0,0.5))
+        self.cmd_pos = [0.0, 0.0, 0.0]
+        self.dataPacket = DataPacket()
         self.exit = False
-
+        self.cf_init()
 
     def cf_init(self):
         self.cb_received = threading.Event()
@@ -78,6 +81,9 @@ class ViconPositionNode(Node):
     def zero_pos(self):
         self.loc.send_extpose([0,0,0],[0,0,0,1])
 
+    def cf_command_resived(self, msg):
+        self.cmd_pos = [msg.x,msg.y,msg.z]
+        
 
     def timer_callback(self):
         time = rclpy.time.Time()
@@ -100,9 +106,13 @@ class ViconPositionNode(Node):
         state_vel = ((pos.x-self.lastpos[0])/dt, (pos.y-self.lastpos[1])/dt, (pos.z-self.lastpos[2])/dt)
         state_att = (roll, pitch, yaw)
 
-        tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att)
+        tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
         self.dataPacket = tempPacket
+        
+        msg = Pose(position = Point(x=pos.x, y=pos.y, z=pos.z), orientation = rot)
+
+        self.pos_pub.publish(msg)
 
         self.get_logger().info(
             f"x: {pos.x:.3f}, y: {pos.y:.3f}, z: {pos.z:.3f} | "
@@ -119,6 +129,7 @@ class ViconPositionNode(Node):
             time.sleep(1)
             if self.channel is None or self.dataPacket is None:
                 return
+              
             self.channel.send_packet(self.dataPacket.returnType(1))
             self.channel.send_packet(self.dataPacket.returnType(2))
 
