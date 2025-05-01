@@ -14,10 +14,10 @@ const ProgramContainer = ({ programs, setPrograms }) => {
   };
 
   return (
-    <div className="program_container">
-      <h3>set points</h3>
+    <div className="program_container modal">
+      <h3>Saved Set Points</h3>
 			<div className="program_div">
-				<ul id="list">
+				<ul id="list" className="program_list">
 					{programs.map((program, index) => (
 						<ProgramItem key={index}
 												 program={program}

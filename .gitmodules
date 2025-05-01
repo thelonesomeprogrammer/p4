@@ -45,3 +45,6 @@
 [submodule "crazyflie-firmware"]
 	path = crazyflie-firmware
 	url = https://github.com/thelonesomeprogrammer/crazyflie-firmware.git
+[submodule "src/ros2-vicon-bridge"]
+	path = src/ros2-vicon-bridge
+	url = https://github.com/dasc-lab/ros2-vicon-bridge.git
