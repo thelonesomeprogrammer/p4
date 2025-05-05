@@ -85,6 +85,7 @@ class ViconPositionNode(Node):
     def cf_command_received(self, msg):
         self.cmd_pos = [msg.x,msg.y,msg.z]
         
+
     def timer_callback(self, msg):
         pos = msg.pose.position
         rot = msg.pose.orientation
@@ -93,7 +94,8 @@ class ViconPositionNode(Node):
         rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
         roll, pitch, yaw = rpy
 
-        self.pos = [pos.x,pos.y,pos.z]
+        self.lastpos = [self.pos.x, self.pos.y, self.pos.z]
+        self.pos = [pos.x, pos.y, pos.z]
         self.quat = quat
 
         dt = time - self.lasttime
@@ -101,9 +103,9 @@ class ViconPositionNode(Node):
             return
         self.lasttime = time
 
-        state_pos = (pos.y, -pos.x, pos.z)
+        state_pos = (pos.x, pos.y, pos.z)  # forward is x, left is y, up is z
         state_vel = ((pos.x-self.lastpos[0])/dt, (pos.y-self.lastpos[1])/dt, (pos.z-self.lastpos[2])/dt)
-        state_att = (-pitch,-roll, yaw)
+        state_att = (roll, -pitch, yaw) # pitch is double iffipped eg not flipped
 
         tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
