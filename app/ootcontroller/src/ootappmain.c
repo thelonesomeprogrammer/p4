@@ -5,6 +5,7 @@
 #include "oot_msg_types.h"
 
 #include "FreeRTOS.h"
+#include "semphr.h"
 #include "task.h"
 
 #include "app_channel.h"
@@ -21,6 +22,9 @@
 
 setpoint_t mySetpoint;
 state_t myState;
+
+static SemaphoreHandle_t dataMutex;
+static StaticSemaphore_t dataMutexBuffer;
 
 void appMain() {
   DEBUG_PRINT("Waiting for activation ...\n");
@@ -93,12 +97,19 @@ void appMain() {
   }
 }
 
-void estimatorOutOfTreeInit(void) {}
+void estimatorOutOfTreeInit(void) {
+
+  dataMutex = xSemaphoreCreateMutexStatic(&dataMutexBuffer);
+}
 
 bool estimatorOutOfTreeTest(void) { return true; }
 
 void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
-  state = &myState;
+  xSemaphoreTake(dataMutex, portMAX_DELAY);
+
+  // Copy the latest state, calculated by the task
+  memcpy(state, &myState, sizeof(state_t));
+  xSemaphoreGive(dataMutex);
 }
 
 /*

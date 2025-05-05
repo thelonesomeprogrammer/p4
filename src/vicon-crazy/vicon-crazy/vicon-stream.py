@@ -40,8 +40,8 @@ class ViconPositionNode(Node):
     def __init__(self):
         super().__init__('vicon_position_node')
         self.pos_sub = self.create_subscription(Pose, '/vicon/Group466CF/Group466CF/pose',self.timer_callback, 20)
-        self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_resived, 20)
-        self.threads = [threading.Thread(target=self.rlcThread),threading.Thread(target=self.CFThread)]
+        self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_received, 20)
+        self.threads = [threading.Thread(target=self.rclThread),threading.Thread(target=self.CFThread)]
         self.lasttime = 0.0
         self.lastpos = [0.0, 0.0, 0.0]
         self.cmd_pos = [0.0, 0.0, 0.5]
@@ -82,10 +82,9 @@ class ViconPositionNode(Node):
     def zero_pos(self):
         self.loc.send_extpose([0,0,0],[0,0,0,1])
 
-    def cf_command_resived(self, msg):
+    def cf_command_received(self, msg):
         self.cmd_pos = [msg.x,msg.y,msg.z]
         
-
     def timer_callback(self, msg):
         pos = msg.pose.position
         rot = msg.pose.orientation
@@ -115,7 +114,7 @@ class ViconPositionNode(Node):
         #    f"roll: {roll:.1f}°, pitch: {pitch:.1f}°, yaw: {yaw:.1f}°"
         #)
     
-    def rlcThread(self):
+    def rclThread(self):
         rclpy.spin(self)
         self.exit = True
         rclpy.shutdown()
