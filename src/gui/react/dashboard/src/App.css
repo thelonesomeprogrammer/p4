@@ -36,10 +36,6 @@ h1 {
 	text-align: center; /* Centers text inside the section */
 	flex-direction: column; /* Stacks items vertically */
 	justify-content: center; /* Centers content vertically */
-  padding: 20px; /* Adds space inside the section */
-  background-color: #fff; /* Gives a clean white background */
-  border-radius: 10px; /* Rounds the corners */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
 }
 
 .input_div {
@@ -48,11 +44,14 @@ h1 {
 	justify-content: space-between; /* Centers content vertically */
 }
 
-.program_container {
+.modal {
   padding: 20px; /* Adds space inside the section */
   background-color: #fff; /* Gives a clean white background */
   border-radius: 10px; /* Rounds the corners */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+}
+
+.program_container {
 }
 
 .data_div p {
@@ -85,8 +84,7 @@ h1 {
 }
 
 /* Right Section - Program Set Points */
-.program_container h3 {
-  color: #4CAF50; /* Matches the header color for consistency */
+h3 {
   margin-bottom: 10px; /* Adds space below the title */
 }
 
@@ -98,29 +96,32 @@ h1 {
   overflow-y: auto; /* Allows scrolling if content overflows */
 }
 
-/* List of Set Points */
-ul {
-  list-style: none; /* Removes bullets from the list */
-  padding: 0; /* Removes default padding */
+.program_list{
+	display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-li {
+.program_list li {
   display: flex; /* Aligns content horizontally */
   justify-content: space-between; /* Evenly spaces the content */
   align-items: center; /* Vertically aligns items */
-  padding: 10px; /* Inner spacing */
-  margin-bottom: 10px; /* Space between list items */
+  padding: 3px; /* Inner spacing */
   background-color: #f2f2f2; /* Light gray background for list items */
   border-radius: 5px; /* Rounded corners */
 }
 
-li p {
+.program_list li p {
   flex-grow: 1; /* Ensures the text takes up available space */
-  margin-right: 10px; /* Space between text and buttons */
+	margin-left: 10px; /* Space between text and the border */
 }
 
 /* Buttons inside List Items */
-li button {
+.program_list li button {
+  margin-right: 10px; /* Space between text and buttons */
   padding: 5px 10px; /* Smaller buttons */
   border: none; /* Removes default border */
   border-radius: 5px; /* Rounded corners */
@@ -128,24 +129,23 @@ li button {
   cursor: pointer; /* Indicates button is clickable */
 }
 
-li .rm_button {
+.program_list li .rm_button {
   background-color: #ff6347; /* Red button for remove action */
 }
 
-li .rm_button:hover {
+.program_list li .rm_button:hover {
   background-color: #e74c3c; /* Darker red on hover */
 }
 
-li .send_button {
+.program_list li .send_button {
   background-color: #4CAF50; /* Green button for send action */
 }
-
-li .send_button:hover {
+.program_list li .send_button:hover {
   background-color: #45a049; /* Darker green on hover */
 }
 
 /* Drag-and-Drop Styles for List Items */
-li.dragging {
+.program_list li.dragging {
   opacity: 0.5; /* Makes the dragged item semi-transparent */
   border: 2px dashed #4CAF50; /* Dashed border for feedback */
 }

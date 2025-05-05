@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from tf2_ros import TransformListener, Buffer
-from geometry_msgs.msg import TransformStamped, Point, Pose
+from geometry_msgs.msg import Point, Pose
 from scipy.spatial.transform import Rotation as R
 
 import time
@@ -40,10 +39,7 @@ class DataPacket:
 class ViconPositionNode(Node):
     def __init__(self):
         super().__init__('vicon_position_node')
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.timer = self.create_timer(0.01, self.timer_callback)  # 100 Hz
-        self.pos_pub = self.create_publisher(Pose, 'cf_pos', 20)
+        self.pos_sub = self.create_subscription(Pose, '/vicon/Group466CF/Group466CF/pose',self.timer_callback, 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_resived, 20)
         self.threads = [threading.Thread(target=self.rlcThread),threading.Thread(target=self.CFThread)]
         self.lasttime = 0.0
@@ -90,21 +86,16 @@ class ViconPositionNode(Node):
         self.cmd_pos = [msg.x,msg.y,msg.z]
         
 
-    def timer_callback(self):
-        try:
-            trans: TransformStamped = self.tf_buffer.lookup_transform(
-                'world', 'Group466CF', rclpy.time.Time()
-            )
-        except Exception:
-            return  # Wait for valid transform
-        pos = trans.transform.translation
-        rot = trans.transform.rotation
-        time = float(float(trans.header.stamp.sec) + float(trans.header.stamp.nanosec)/10**9)
+    def timer_callback(self, msg):
+        pos = msg.pose.position
+        rot = msg.pose.orientation
+        time = float(float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec)/10**9)
         quat = [rot.x, rot.y, rot.z, rot.w]
         rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
         roll, pitch, yaw = rpy
 
-        self.pos = [pos.x,pos.y,pos.z]
+        self.lastpos = [self.pos.x, self.pos.y, self.pos.z]
+        self.pos = [pos.x, pos.y, pos.z]
         self.quat = quat
 
         dt = time - self.lasttime
@@ -112,17 +103,14 @@ class ViconPositionNode(Node):
             return
         self.lasttime = time
 
-        state_pos = (pos.x, pos.y, pos.z)
+        state_pos = (pos.x, pos.y, pos.z)  # forward is x, left is y, up is z
         state_vel = ((pos.x-self.lastpos[0])/dt, (pos.y-self.lastpos[1])/dt, (pos.z-self.lastpos[2])/dt)
-        state_att = (roll, pitch, yaw)
+        state_att = (roll, -pitch, yaw) # pitch is double iffipped eg not flipped
+
 
         tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
         self.dataPacket = tempPacket
-        
-        msg = Pose(position = Point(x=pos.x, y=pos.y, z=pos.z), orientation = rot)
-
-        self.pos_pub.publish(msg)
 
         #self.get_logger().info(
         #    f"x: {pos.x:.3f}, y: {pos.y:.3f}, z: {pos.z:.3f} | "

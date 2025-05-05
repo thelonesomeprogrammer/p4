@@ -157,11 +157,15 @@ ENV DEBIAN_FRONTEND=
 FROM fullrust AS fullrustrocket
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ROCKET_ADDRESS=0.0.0.0
+ENV ROS_DOMAIN_ID=1
 RUN mkdir /workdir/
 WORKDIR /workdir/
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
+		libboost-thread-dev \
+		libboost-date-time-dev \
+		ros-${ROS_DISTRO}-diagnostic-updater \
     && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=
