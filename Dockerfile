@@ -161,11 +161,20 @@ ENV ROS_DOMAIN_ID=1
 RUN mkdir /workdir/
 WORKDIR /workdir/
 
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
 		libboost-thread-dev \
 		libboost-date-time-dev \
 		ros-${ROS_DISTRO}-diagnostic-updater \
+		nodejs \
+		yarn \
     && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /venv
+RUN . /venv/bin/activate \
+		&& pip install cflib pyyaml
 
 ENV DEBIAN_FRONTEND=

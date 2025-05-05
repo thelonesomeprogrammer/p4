@@ -21,4 +21,16 @@ def generate_launch_description():
                 {"tf_namespace": "vicon"}
             ]
         ),
+        Node(
+            package='vicon-crazy',
+            executable='vicon_stream',
+            name='station',
+        ),
+
+        Node(
+            package='cf_rust_gui',
+            executable='web',
+            name='api',
+        ),
+
     ])
