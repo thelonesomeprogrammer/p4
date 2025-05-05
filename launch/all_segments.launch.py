@@ -15,7 +15,7 @@ def generate_launch_description():
             parameters = [
                 {"host_name": host_name},
                 {"stream_mode": "ServerPush"}, # or "ClientPull"
-                {"update_rate_hz": 750.0},
+                {"update_rate_hz": 300.0},
                 {"publish_specific_segment": False},
                 {"world_frame_id": "world"},
                 {"tf_namespace": "vicon"}
