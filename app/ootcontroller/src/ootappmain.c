@@ -41,6 +41,11 @@ void appMain() {
   // logVarId_t x = logGetVarId("ctrltarget", "x");
   // logVarId_t y = logGetVarId("ctrltarget", "y");
   // logVarId_t z = logGetVarId("ctrltarget", "z");
+
+  logVarId_t x = logGetVarId("stateEstimate", "x");
+  logVarId_t y = logGetVarId("stateEstimate", "y");
+  logVarId_t z = logGetVarId("stateEstimate", "z");
+
   logVarId_t thrust = logGetVarId("controller", "cmd_thrust");
 
   memset(&mySetpoint, 0, sizeof(setpoint_t));
@@ -76,12 +81,12 @@ void appMain() {
     }
     txPacket.batteryVoltage = pmGetBatteryVoltage();
 
-    // txPacket.position.x = logGetFloat(x);
-    // txPacket.position.y = logGetFloat(y);
-    // txPacket.position.z = logGetFloat(z);
-    txPacket.position.x = mySetpoint.position.x;
-    txPacket.position.y = mySetpoint.position.y;
-    txPacket.position.z = mySetpoint.position.z;
+    txPacket.position.x = logGetFloat(x);
+    txPacket.position.y = logGetFloat(y);
+    txPacket.position.z = logGetFloat(z);
+    // txPacket.position.x = mySetpoint.position.x;
+    // txPacket.position.y = mySetpoint.position.y;
+    // txPacket.position.z = mySetpoint.position.z;
     txPacket.cmd_thrust = logGetFloat(thrust);
 
     if (supervisorAreMotorsAllowedToRun()) {
