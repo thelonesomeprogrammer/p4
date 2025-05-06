@@ -18,8 +18,6 @@ Follow these steps to set up the project on your local machine:
 Ensure you have the following installed:
 - ROS 2 (jazzy)
 - Rust (via [Rustup](https://rustup.rs/))
-- Trunk (for Rust components)
-- wasm-target (for WebAssembly)
 - Cargo-ament (for building Rust packages)
 - yarn (for JavaScript components)
 
