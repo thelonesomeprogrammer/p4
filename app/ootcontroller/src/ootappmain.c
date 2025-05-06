@@ -34,6 +34,14 @@ void appMain() {
   struct PacketRX rxPacket;
   struct PacketTX txPacket;
 
+  TickType_t lastWakeTime;
+  lastWakeTime = xTaskGetTickCount();
+
+  mySetpoint.mode.x = modeAbs;
+  mySetpoint.mode.y = modeAbs;
+  mySetpoint.mode.z = modeAbs;
+  mySetpoint.mode.yaw = modeAbs;
+
   // logVarId_t x = logGetVarId("kalman", "stateX");
   // logVarId_t y = logGetVarId("kalman", "stateY");
   // logVarId_t z = logGetVarId("kalman", "stateZ");
@@ -52,8 +60,6 @@ void appMain() {
 
   while (1) {
     if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), 0)) {
-      // Set all desired values used in controller
-
       if (rxPacket.messageType == false) {
         myState.position.x = rxPacket.v1.x;
         myState.position.y = rxPacket.v1.y;
@@ -62,7 +68,8 @@ void appMain() {
         myState.velocity.x = rxPacket.v2.x;
         myState.velocity.y = rxPacket.v2.y;
         myState.velocity.z = rxPacket.v2.z;
-      } else if (rxPacket.messageType == true) {
+      } 
+      else if (rxPacket.messageType == true) {
         myState.attitude.roll = rxPacket.v1.x;
         myState.attitude.pitch = -rxPacket.v1.y;
         myState.attitude.yaw = rxPacket.v1.z;
@@ -71,12 +78,6 @@ void appMain() {
         mySetpoint.position.y = rxPacket.v2.y;
         mySetpoint.position.z = rxPacket.v2.z;
       }
-
-      mySetpoint.mode.x = modeAbs;
-      mySetpoint.mode.y = modeAbs;
-      mySetpoint.mode.z = modeAbs;
-      mySetpoint.mode.yaw = modeAbs;
-
       commanderSetSetpoint(&mySetpoint, 3);
     }
     txPacket.batteryVoltage = pmGetBatteryVoltage();
@@ -84,21 +85,20 @@ void appMain() {
     txPacket.position.x = logGetFloat(x);
     txPacket.position.y = logGetFloat(y);
     txPacket.position.z = logGetFloat(z);
-    // txPacket.position.x = mySetpoint.position.x;
-    // txPacket.position.y = mySetpoint.position.y;
-    // txPacket.position.z = mySetpoint.position.z;
     txPacket.cmd_thrust = logGetFloat(thrust);
 
     if (supervisorAreMotorsAllowedToRun()) {
       txPacket.debugState = true;
-    } else {
+    } 
+    else {
       txPacket.debugState = false;
     }
 
     // Send data packet to PC
     appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    // vTaskDelay(pdMS_TO_TICKS(1));
+    vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(1));
   }
 }
 
@@ -112,7 +112,6 @@ bool estimatorOutOfTreeTest(void) { return true; }
 void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
   xSemaphoreTake(dataMutex, portMAX_DELAY);
 
-  // Copy the latest state, calculated by the task
   memcpy(state, &myState, sizeof(state_t));
   xSemaphoreGive(dataMutex);
 }
