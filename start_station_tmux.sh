@@ -23,14 +23,8 @@ tmux send-keys -t $SESSION:2 'source /opt/ros/jazzy/setup.bash' C-m
 tmux send-keys -t $SESSION:2 'source install/setup.bash' C-m
 tmux send-keys -t $SESSION:2 'ros2 run cf_rust_gui web' C-m
 
-# Window 4: frontend
-tmux new-window -t $SESSION:3 -n frontend
-tmux send-keys -t $SESSION:3 'cd src/gui/react/dashboard/' C-m
-tmux send-keys -t $SESSION:3 'yarn install' C-m
-tmux send-keys -t $SESSION:3 'yarn run dev' C-m
-
-# Window 5: bash shell
-tmux new-window -t $SESSION:4 -n shell
+# Window 4: bash shell
+tmux new-window -t $SESSION:3 -n shell
 
 # Attach to the session
 tmux attach-session -t $SESSION

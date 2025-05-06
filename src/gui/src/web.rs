@@ -127,9 +127,9 @@ fn stream(state: &State<RokctState>) -> String {
     );
 }
 
-#[get("/dist/<file..>")]
+#[get("/static/<file..>")]
 fn dist(file: PathBuf) -> Option<(ContentType, Cow<'static, [u8]>)> {
-    let filename = file.display().to_string();
+    let filename = "static/".to_string() + &file.display().to_string();
     let asset = Asset::get(&filename)?;
     let content_type = file
         .extension()
