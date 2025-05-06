@@ -123,10 +123,10 @@ class ViconPositionNode(Node):
 
     def CFThread(self):
         while not self.exit:
-            time.sleep(1)
+            time.sleep(0.01)
             if self.channel is None or self.dataPacket is None:
                 return
-            #self.loc.send_extpose(self.pos,self.quat)
+            print(f"Sending data:", self.dataPacket.state_pos, self.dataPacket.state_vel, self.dataPacket.state_att, self.dataPacket.setpoint_pos)
             self.channel.send_packet(self.dataPacket.returnType(1))
             self.channel.send_packet(self.dataPacket.returnType(2))
 
