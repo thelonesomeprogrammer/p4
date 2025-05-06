@@ -14,6 +14,15 @@ rocket = { version = "0.5.1"}
 serde = "1.0.195"
 rust-embed = "8.3.0"
 rocket_ws = "0.1.1"
-rclrs = "*"
-std_msgs = "*"
-geometry_msgs = "*"
+
+[dependencies.rclrs]
+version = "*"
+
+[dependencies.rosidl_runtime_rs]
+version = "*"
+
+[dependencies.std_msgs]
+version = "*"
+
+[dependencies.geometry_msgs]
+version = "*"
