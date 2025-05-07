@@ -10,6 +10,12 @@ cache/
 
 .cache/
 
+# ignore the .cargo file at the repo root
+.cargo/
+
+# ignore the Cargo.lock in src/gui
+src/gui/Cargo.lock
+
 # eclipse stuff
 .project
 .cproject
