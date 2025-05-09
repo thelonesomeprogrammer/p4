@@ -2,10 +2,10 @@ rosbag2_bagfile_information:
   version: 9
   storage_identifier: mcap
   duration:
-    nanoseconds: 9102433109
+    nanoseconds: 11711125107
   starting_time:
-    nanoseconds_since_epoch: 1746777303348219321
-  message_count: 735
+    nanoseconds_since_epoch: 1746789877890543817
+  message_count: 1351
   topics_with_message_count:
     - topic_metadata:
         name: /cf_appchannel
@@ -28,7 +28,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_d501954e9476cea2996984e812054b68026ae0bfae789d9a10b23daf35cc90fa
-      message_count: 323
+      message_count: 379
     - topic_metadata:
         name: /vicon/Group466CF/Group466CF/pose
         type: geometry_msgs/msg/PoseStamped
@@ -50,7 +50,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_10f3786d7d40fd2b54367835614bff85d4ad3b5dab62bf8bca0cc232d73b4cd8
-      message_count: 412
+      message_count: 972
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
@@ -58,9 +58,9 @@ rosbag2_bagfile_information:
   files:
     - path: bag2_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 1746777303348219321
+        nanoseconds_since_epoch: 1746789877890543817
       duration:
-        nanoseconds: 9102433109
-      message_count: 735
+        nanoseconds: 11711125107
+      message_count: 1351
   custom_data: ~
   ros_distro: jazzy
