@@ -8,7 +8,7 @@ const ProgramContainer = ({ programs, setPrograms }) => {
   };
 
   const sendProgram = (program) => {
-    fetch('/control', { method: 'POST', body: program })
+    fetch('/api/control', { method: 'POST', body: program })
       .then((res) => console.log('Sent:', program))
       .catch((err) => console.error('Error sending program:', err));
   };
