@@ -26,7 +26,12 @@ struct PacketTX {
   struct {
     float x, y, z;
   } position;
-  float batteryVoltage;
-  float cmd_thrust;
-  bool debugState;
+  struct {
+    float roll, pitch, yaw;
+  } attitude;
+  int8_t compareResult;
+
+  // float batteryVoltage;
+  // float cmd_thrust;
+  // bool debugState;
 } __attribute__((packed));

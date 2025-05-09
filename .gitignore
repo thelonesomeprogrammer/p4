@@ -50,3 +50,7 @@ target/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 .vscode/
+
+# Personal files
+
+magnus_start_station_tmux.sh

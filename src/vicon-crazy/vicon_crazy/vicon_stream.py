@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point, Pose
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 from scipy.spatial.transform import Rotation as R
 
 import time
@@ -39,15 +39,24 @@ class DataPacket:
 class ViconPositionNode(Node):
     def __init__(self):
         super().__init__('vicon_position_node')
-        self.pos_sub = self.create_subscription(Pose, '/vicon/Group466CF/Group466CF/pose',self.timer_callback, 20)
+
+        # Logging setup
+        self._min_interval = rclpy.duration.Duration(seconds=1.0)
+        self._last_log_times: dict[str, rclpy.time.Time] = {}
+        self._log_lock = threading.Lock()
+
+        # Subscribers, publishers and threads
+        self.pos_sub = self.create_subscription(PoseStamped, '/vicon/Group466CF/Group466CF/pose',self.vicon_callback, 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_received, 20)
+        self.appchannel_pub = self.create_publisher(Pose, 'cf_appchannel', 20)
         self.threads = [threading.Thread(target=self.rclThread),threading.Thread(target=self.CFThread)]
-        self.lasttime = 0.0
+
+        self.lasttime = 0
+
         self.lastpos = [0.0, 0.0, 0.0]
         self.cmd_pos = [0.0, 0.0, 0.5]
 
         self.pos = [0,0,0]
-        self.quat = [0,0,0,0]
         self.dataPacket = DataPacket()
         self.exit = False
         self.cf_init()
@@ -68,6 +77,7 @@ class ViconPositionNode(Node):
 
         self.channel = Appchannel(self.cf)
         self.loc = Localization(self.cf)
+        self.loc.send_extpose([0,0,0], [0,0,0,1])
 
     def runThreads(self):
         self.threads[0].start()
@@ -79,42 +89,48 @@ class ViconPositionNode(Node):
         self.threads[0].join()
         self.threads[1].join()
 
-    def zero_pos(self):
-        self.loc.send_extpose([0,0,0],[0,0,0,1])
+    def _should_log(self, site_key: str) -> bool:
+        now = self.get_clock().now()
+        with self._log_lock:
+            last = self._last_log_times.get(site_key)
+            if last is None or (now - last) >= self._min_interval:
+                self._last_log_times[site_key] = now
+                return True
+            return False
 
-    def cf_command_received(self, msg):
+    def cf_command_received(self, msg: Point):
         self.cmd_pos = [msg.x,msg.y,msg.z]
         
-
-    def timer_callback(self, msg):
+    def vicon_callback(self, msg: PoseStamped):
         pos = msg.pose.position
         rot = msg.pose.orientation
-        time = float(float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec)/10**9)
-        quat = [rot.x, rot.y, rot.z, rot.w]
-        rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
-        roll, pitch, yaw = rpy
 
-        self.lastpos = [self.pos.x, self.pos.y, self.pos.z]
+        self.lastpos = [self.pos[0], self.pos[1], self.pos[2]]
         self.pos = [pos.x, pos.y, pos.z]
-        self.quat = quat
 
+        time = float(float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec)/10**9)
         dt = time - self.lasttime
-        if dt == 0:
-            return
         self.lasttime = time
 
         state_pos = (pos.x, pos.y, pos.z)  # forward is x, left is y, up is z
         state_vel = ((pos.x-self.lastpos[0])/dt, (pos.y-self.lastpos[1])/dt, (pos.z-self.lastpos[2])/dt)
-        state_att = (roll, -pitch, yaw) # pitch is double iffipped eg not flipped
 
+        quat = [rot.x, rot.y, rot.z, rot.w]
+        rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
+        roll, pitch, yaw = rpy
+
+        state_att = (roll, pitch, yaw)
+        self.loc.send_extpose(state_pos, quat)
         tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
-        self.dataPacket = tempPacket
+        # if self._should_log("viconCB"):
+        #         self.get_logger().info(
+        #             f"viconCB sent: \n" 
+        #             f"Position: {state_pos} m | "
+        #             f"Orientation: {state_att} | "
+        #             )
 
-        #self.get_logger().info(
-        #    f"x: {pos.x:.3f}, y: {pos.y:.3f}, z: {pos.z:.3f} | "
-        #    f"roll: {roll:.1f}°, pitch: {pitch:.1f}°, yaw: {yaw:.1f}°"
-        #)
+        self.dataPacket = tempPacket
     
     def rclThread(self):
         rclpy.spin(self)
@@ -126,20 +142,38 @@ class ViconPositionNode(Node):
             time.sleep(0.01)
             if self.channel is None or self.dataPacket is None:
                 return
-            print(f"Sending data:", self.dataPacket.state_pos, self.dataPacket.state_vel, self.dataPacket.state_att, self.dataPacket.setpoint_pos)
             self.channel.send_packet(self.dataPacket.returnType(1))
             self.channel.send_packet(self.dataPacket.returnType(2))
 
-    def appchannel_callback(self,data):
-        self.get_logger().info(
-            f"XPosition: {struct.unpack('<f', data[0:4])[0]} m | "
-            f"YPosition: {struct.unpack('<f', data[4:8])[0]} m | "
-            f"ZPosition: {struct.unpack('<f', data[8:12])[0]} m \n"
+            if self._should_log("CFThread"):
+                self.get_logger().info(
+                    f"CFThread sent:\n "
+                    f"State_Pos: {self.dataPacket.state_pos} |"
+                    f"State_Vel: {self.dataPacket.state_vel} |" 
+                    f"State_Att: {self.dataPacket.state_att} |"
+                    f"Setpoint_Pos: {self.dataPacket.setpoint_pos} |"
+                    )
 
-            f"Battery Voltage: {struct.unpack('<f', data[12:16])[0]} V | "
-            f"CMD_Thrust: {struct.unpack('<f', data[16:20])[0]} Thrust | "
-            f"DebugState: {struct.unpack('<b', data[20:21])[0]} 1:True, 0:False | "
-        )
+    def appchannel_callback(self,data):
+        position = [struct.unpack('<f', data[0:4])[0],struct.unpack('<f', data[4:8])[0],struct.unpack('<f', data[8:12])[0]]
+        attitude = [struct.unpack('<f', data[12:16])[0],struct.unpack('<f', data[16:20])[0],struct.unpack('<f', data[20:24])[0]]
+        # compare = [struct.unpack('<i', data[24:28])[0]]
+        orientation = R.from_euler('xyz', attitude, degrees=True).as_quat()
+
+        self.appchannel_pub.publish(Pose(position=Point(x=position[0], y=position[1], z=position[2]), 
+                                         orientation=Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])))
+
+        if self._should_log("Appchannel"):
+            self.get_logger().info(
+                f"Appchannel received: \n"
+                f"Position: {position} m | "
+                f"Orientation: {attitude} | "
+                # f"Compare: {compare} | "
+
+                # f"Battery Voltage: {struct.unpack('<f', data[12:16])[0]} V | "
+                # f"CMD_Thrust: {struct.unpack('<f', data[16:20])[0]} Thrust | "
+                # f"DebugState: {struct.unpack('<b', data[20:21])[0]} | "
+                )
     
     def mainLoop(self): 
         while not self.exit:

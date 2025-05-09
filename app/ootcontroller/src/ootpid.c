@@ -11,6 +11,7 @@
 
 #include "controller.h"
 #include "controller_pid.h"
+#include "controller_brescianini.h"
 
 // void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 //   pid->kp = kp;
@@ -24,8 +25,8 @@
 void controllerOutOfTreeInit() {
   DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
 
-  // controllerBrescianiniInit();
-  controllerPidInit();
+  controllerBrescianiniInit();
+  // controllerPidInit();
 
   // Initialize the PID controllers
   // ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
@@ -47,7 +48,9 @@ void controllerOutOfTreeInit() {
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
                          const sensorData_t *sensors, const state_t *state,
                          const stabilizerStep_t stabilizerStep) {
-  controllerPid(control, setpoint, sensors, state, stabilizerStep);
+                          
+  controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
+  // controllerPid(control, setpoint, sensors, state, stabilizerStep);
 }
 
 // void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
