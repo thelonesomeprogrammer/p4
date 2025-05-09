@@ -16,15 +16,19 @@
 
 #define DEBUG_MODULE "ootpid"
 #include "debug.h"
+#include "math3d.h"
 
 #include "commander.h"
 #include "pm.h"
 
 setpoint_t mySetpoint;
 state_t myState;
+int32_t compareResult = 0;
 
-static SemaphoreHandle_t dataMutex;
-static StaticSemaphore_t dataMutexBuffer;
+bool newState = false;
+
+// static SemaphoreHandle_t dataMutex;
+// static StaticSemaphore_t dataMutexBuffer;
 
 void appMain() {
   DEBUG_PRINT("Waiting for activation ...\n");
@@ -37,11 +41,6 @@ void appMain() {
   TickType_t lastWakeTime;
   lastWakeTime = xTaskGetTickCount();
 
-  mySetpoint.mode.x = modeAbs;
-  mySetpoint.mode.y = modeAbs;
-  mySetpoint.mode.z = modeAbs;
-  mySetpoint.mode.yaw = modeAbs;
-
   // logVarId_t x = logGetVarId("kalman", "stateX");
   // logVarId_t y = logGetVarId("kalman", "stateY");
   // logVarId_t z = logGetVarId("kalman", "stateZ");
@@ -50,70 +49,57 @@ void appMain() {
   // logVarId_t y = logGetVarId("ctrltarget", "y");
   // logVarId_t z = logGetVarId("ctrltarget", "z");
 
+  // logVarId_t x = logGetVarId("controller", "roll");
+  // logVarId_t y = logGetVarId("controller", "pitch");
+  // logVarId_t z = logGetVarId("controller", "yaw");
+
   logVarId_t x = logGetVarId("stateEstimate", "x");
   logVarId_t y = logGetVarId("stateEstimate", "y");
   logVarId_t z = logGetVarId("stateEstimate", "z");
 
-  logVarId_t thrust = logGetVarId("controller", "cmd_thrust");
+  logVarId_t roll = logGetVarId("stateEstimate", "roll");
+  logVarId_t pitch = logGetVarId("stateEstimate", "pitch");
+  logVarId_t yaw = logGetVarId("stateEstimate", "yaw");
+
+  // logVarId_t thrust = logGetVarId("controller", "cmd_thrust");
 
   memset(&mySetpoint, 0, sizeof(setpoint_t));
 
+  mySetpoint.mode.x = modeAbs;
+  mySetpoint.mode.y = modeAbs;
+  mySetpoint.mode.z = modeAbs;
+  mySetpoint.mode.yaw = modeAbs;
+
   while (1) {
     if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), 0)) {
-      if (rxPacket.messageType == false) {
-        myState.position.x = rxPacket.v1.x;
-        myState.position.y = rxPacket.v1.y;
-        myState.position.z = rxPacket.v1.z;
-
-        myState.velocity.x = rxPacket.v2.x;
-        myState.velocity.y = rxPacket.v2.y;
-        myState.velocity.z = rxPacket.v2.z;
-      } 
-      else if (rxPacket.messageType == true) {
-        myState.attitude.roll = rxPacket.v1.x;
-        myState.attitude.pitch = -rxPacket.v1.y;
-        myState.attitude.yaw = rxPacket.v1.z;
-
-        mySetpoint.position.x = rxPacket.v2.x;
-        mySetpoint.position.y = rxPacket.v2.y;
-        mySetpoint.position.z = rxPacket.v2.z;
-      }
+      mySetpoint.position.x = rxPacket.pos.x;
+      mySetpoint.position.y = rxPacket.pos.y;
+      mySetpoint.position.z = rxPacket.pos.z;
       commanderSetSetpoint(&mySetpoint, 3);
     }
-    txPacket.batteryVoltage = pmGetBatteryVoltage();
 
     txPacket.position.x = logGetFloat(x);
     txPacket.position.y = logGetFloat(y);
     txPacket.position.z = logGetFloat(z);
-    txPacket.cmd_thrust = logGetFloat(thrust);
+    txPacket.attitude.roll = logGetFloat(roll);
+    txPacket.attitude.pitch = logGetFloat(pitch);
+    txPacket.attitude.yaw = logGetFloat(yaw);
 
-    if (supervisorAreMotorsAllowedToRun()) {
-      txPacket.debugState = true;
-    } 
-    else {
-      txPacket.debugState = false;
-    }
+    // txPacket.batteryVoltage = pmGetBatteryVoltage();
+
+    // if (supervisorAreMotorsAllowedToRun()) {
+    //   txPacket.debugState = true;
+    // } 
+    // else {
+    //   txPacket.debugState = false;
+    // }
 
     // Send data packet to PC
     appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
 
-    // vTaskDelay(pdMS_TO_TICKS(1));
-    vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(1));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    // vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
   }
-}
-
-void estimatorOutOfTreeInit(void) {
-
-  dataMutex = xSemaphoreCreateMutexStatic(&dataMutexBuffer);
-}
-
-bool estimatorOutOfTreeTest(void) { return true; }
-
-void estimatorOutOfTree(state_t *state, const stabilizerStep_t stabilizerStep) {
-  xSemaphoreTake(dataMutex, portMAX_DELAY);
-
-  memcpy(state, &myState, sizeof(state_t));
-  xSemaphoreGive(dataMutex);
 }
 
 /*

@@ -11,6 +11,7 @@
 
 #include "controller.h"
 #include "controller_pid.h"
+#include "controller_brescianini.h"
 
 // void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 //   pid->kp = kp;
@@ -47,6 +48,8 @@ void controllerOutOfTreeInit() {
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
                          const sensorData_t *sensors, const state_t *state,
                          const stabilizerStep_t stabilizerStep) {
+                          
+  // controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
   controllerPid(control, setpoint, sensors, state, stabilizerStep);
 }
 
