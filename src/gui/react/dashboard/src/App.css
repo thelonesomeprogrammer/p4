@@ -1,35 +1,35 @@
 /* Base Styles - Reset and Global Settings */
 * {
-  margin: 0; /* Removes default margins */
-  padding: 0; /* Removes default padding */
-  box-sizing: border-box; /* Ensures consistent box model */
+	margin: 0; /* Removes default margins */
+	padding: 0; /* Removes default padding */
+	box-sizing: border-box; /* Ensures consistent box model */
 }
 
 body {
-  font-family: Arial, sans-serif; /* Sets a clean, readable font */
-  background-color: #f9f9f9; /* Light gray background */
-  color: #333; /* Dark gray for text */
-  line-height: 1.6; /* Improves readability */
+	font-family: Arial, sans-serif; /* Sets a clean, readable font */
+	background-color: #f9f9f9; /* Light gray background */
+	color: #333; /* Dark gray for text */
+	line-height: 1.6; /* Improves readability */
 }
 
 /* Header - Main Title */
 h1 {
-  text-align: center; /* Centers the title */
-  color: #4CAF50; /* Green color for the main header */
-  margin: 20px 0; /* Adds vertical space around the header */
+	text-align: center; /* Centers the title */
+	color: #4caf50; /* Green color for the main header */
+	margin: 20px 0; /* Adds vertical space around the header */
 }
 
 /* Main Layout - Flexbox Container */
 .main_div {
-  display: grid; /* Aligns child elements horizontally */
+	display: grid; /* Aligns child elements horizontally */
 	grid-template-columns: 1fr 1fr 1fr; /* Two equal columns */
-  justify-content: space-between; /* Adds space between the left and right panels */
-  gap: 20px; /* Adds spacing between panels */
-  padding: 20px;
+	justify-content: space-between; /* Adds space between the left and right panels */
+	gap: 20px; /* Adds spacing between panels */
+	padding: 20px;
 }
 
 /* Left Section - Connection and Input */
-.data_div{
+.data_div {
 	display: grid; /* Uses grid layout for child elements */
 	grid-template-columns: 1fr 1fr; /* Single column layout */
 	align-items: center; /* Centers content vertically */
@@ -45,107 +45,108 @@ h1 {
 }
 
 .modal {
-  padding: 20px; /* Adds space inside the section */
-  background-color: #fff; /* Gives a clean white background */
-  border-radius: 10px; /* Rounds the corners */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+	padding: 20px; /* Adds space inside the section */
+	background-color: #fff; /* Gives a clean white background */
+	border-radius: 10px; /* Rounds the corners */
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
 }
 
 .program_container {
 }
 
 .data_div p {
-  margin-bottom: 10px; /* Adds spacing between paragraphs */
+	margin-bottom: 10px; /* Adds spacing between paragraphs */
 }
 
-.data_div input[type="text"], /* Text input styling */
-.data_div input[type="file"] { /* File input styling */
-  width: 100%; /* Full width inputs */
-  padding: 10px; /* Adds inner spacing */
-  margin-top: 10px; /* Adds space above input */
-  border: 1px solid #ccc; /* Light gray border */
-  border-radius: 5px; /* Rounded input fields */
+.data_div input[type="text"] /* Text input styling */,
+.data_div input[type="file"] {
+	/* File input styling */
+	width: 100%; /* Full width inputs */
+	padding: 10px; /* Adds inner spacing */
+	margin-top: 10px; /* Adds space above input */
+	border: 1px solid #ccc; /* Light gray border */
+	border-radius: 5px; /* Rounded input fields */
 }
 
 .data_div button {
-  display: block; /* Buttons appear on their own line */
-  background-color: #4CAF50; /* Primary button color */
-  color: #fff; /* White text */
-  border: none; /* Removes default border */
-  padding: 10px 15px; /* Inner spacing for the button */
-  margin-top: 10px; /* Adds space above button */
-  border-radius: 5px; /* Rounded corners */
-  cursor: pointer; /* Indicates the button is clickable */
-  transition: background-color 0.3s ease; /* Smooth color change on hover */
+	display: block; /* Buttons appear on their own line */
+	background-color: #4caf50; /* Primary button color */
+	color: #fff; /* White text */
+	border: none; /* Removes default border */
+	padding: 10px 15px; /* Inner spacing for the button */
+	margin-top: 10px; /* Adds space above button */
+	border-radius: 5px; /* Rounded corners */
+	cursor: pointer; /* Indicates the button is clickable */
+	transition: background-color 0.3s ease; /* Smooth color change on hover */
 }
 
 .data_div button:hover {
-  background-color: #45a049; /* Slightly darker green on hover */
+	background-color: #45a049; /* Slightly darker green on hover */
 }
 
 /* Right Section - Program Set Points */
 h3 {
-  margin-bottom: 10px; /* Adds space below the title */
+	margin-bottom: 10px; /* Adds space below the title */
 }
 
 .program_div {
-  border: 2px solid #4CAF50; /* Green border to highlight the section */
-  border-radius: 10px; /* Rounded corners */
-  padding: 10px; /* Inner spacing */
-  min-height: 150px; /* Ensures a minimum height */
-  overflow-y: auto; /* Allows scrolling if content overflows */
+	border: 2px solid #4caf50; /* Green border to highlight the section */
+	border-radius: 10px; /* Rounded corners */
+	padding: 10px; /* Inner spacing */
+	min-height: 150px; /* Ensures a minimum height */
+	overflow-y: auto; /* Allows scrolling if content overflows */
 }
 
-.program_list{
+.program_list {
 	display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.5rem;
+	list-style: none;
+	padding: 0;
+	margin: 0;
 }
 
 .program_list li {
-  display: flex; /* Aligns content horizontally */
-  justify-content: space-between; /* Evenly spaces the content */
-  align-items: center; /* Vertically aligns items */
-  padding: 3px; /* Inner spacing */
-  background-color: #f2f2f2; /* Light gray background for list items */
-  border-radius: 5px; /* Rounded corners */
+	display: flex; /* Aligns content horizontally */
+	justify-content: space-between; /* Evenly spaces the content */
+	align-items: center; /* Vertically aligns items */
+	padding: 3px; /* Inner spacing */
+	background-color: #f2f2f2; /* Light gray background for list items */
+	border-radius: 5px; /* Rounded corners */
 }
 
 .program_list li p {
-  flex-grow: 1; /* Ensures the text takes up available space */
+	flex-grow: 1; /* Ensures the text takes up available space */
 	margin-left: 10px; /* Space between text and the border */
 }
 
 /* Buttons inside List Items */
 .program_list li button {
-  margin-right: 10px; /* Space between text and buttons */
-  padding: 5px 10px; /* Smaller buttons */
-  border: none; /* Removes default border */
-  border-radius: 5px; /* Rounded corners */
-  color: #fff; /* White text */
-  cursor: pointer; /* Indicates button is clickable */
+	margin-right: 10px; /* Space between text and buttons */
+	padding: 5px 10px; /* Smaller buttons */
+	border: none; /* Removes default border */
+	border-radius: 5px; /* Rounded corners */
+	color: #fff; /* White text */
+	cursor: pointer; /* Indicates button is clickable */
 }
 
 .program_list li .rm_button {
-  background-color: #ff6347; /* Red button for remove action */
+	background-color: #ff6347; /* Red button for remove action */
 }
 
 .program_list li .rm_button:hover {
-  background-color: #e74c3c; /* Darker red on hover */
+	background-color: #e74c3c; /* Darker red on hover */
 }
 
 .program_list li .send_button {
-  background-color: #4CAF50; /* Green button for send action */
+	background-color: #4caf50; /* Green button for send action */
 }
 .program_list li .send_button:hover {
-  background-color: #45a049; /* Darker green on hover */
+	background-color: #45a049; /* Darker green on hover */
 }
 
 /* Drag-and-Drop Styles for List Items */
 .program_list li.dragging {
-  opacity: 0.5; /* Makes the dragged item semi-transparent */
-  border: 2px dashed #4CAF50; /* Dashed border for feedback */
+	opacity: 0.5; /* Makes the dragged item semi-transparent */
+	border: 2px dashed #4caf50; /* Dashed border for feedback */
 }
