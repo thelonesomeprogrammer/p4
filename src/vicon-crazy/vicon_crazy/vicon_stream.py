@@ -43,6 +43,8 @@ class ViconPositionNode(Node):
     def __init__(self):
         super().__init__('vicon_position_node')
 
+        self.lunched = False
+
         # Logging setup
         self._min_interval = rclpy.duration.Duration(seconds=1.0)
         self._last_log_times: dict[str, rclpy.time.Time] = {}
@@ -99,6 +101,9 @@ class ViconPositionNode(Node):
             return False
 
     def cf_command_received(self, msg: Point):
+        if msg.x == 0.006969 and msg.y == 0.006969 and msg.z == 1.006969:
+            self.lunched = True
+            return
         self.dataPacket.setpoint_pos = [msg.x,msg.y,msg.z]
         
     def vicon_callback(self, msg: PoseStamped):
@@ -141,7 +146,7 @@ class ViconPositionNode(Node):
         oldcmd = self.dataPacket.setpoint_pos
         while not self.exit:
             time.sleep(0.01)
-            if self.channel is None or self.dataPacket is None:
+            if self.channel is None or self.dataPacket is None or self.lunched is False:
                 continue
             if oldcmd is self.dataPacket.setpoint_pos and i < 50:
                 i += 1
