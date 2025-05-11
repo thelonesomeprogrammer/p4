@@ -4,6 +4,7 @@ from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 from scipy.spatial.transform import Rotation as R
 
 import time
+import math as m
 import logging
 import struct
 import threading
@@ -60,6 +61,8 @@ class ViconPositionNode(Node):
 
         # self.lastpos = [0.0, 0.0, 0.0]
         self.firstSetpoint = True
+        self.setpointDistance: list[float] = [0.0, 0.0, 0.0, 0.0]
+        self.viapointQueue: list[list[float], list[float]] = []
 
         self.pos = [0,0,0]
         self.dataPacket = DataPacket()
@@ -111,15 +114,15 @@ class ViconPositionNode(Node):
         if abs(state_att[0]-self.last_att[0]) < 20 or abs(state_att[1]-self.last_att[1]) < 20 or abs(state_att[2]-self.last_att[2]) < 20:
             self.last_att = state_att
         return self.last_att
-
+    
     def vicon_callback(self, msg: PoseStamped):
         pos = msg.pose.position
         rot = msg.pose.orientation
 
-        state_pos = (pos.x, pos.y, pos.z)  # forward is x, left is y, up is z
+        self.state_pos = [pos.x, pos.y, pos.z]  # forward is x, left is y, up is z
+        self.state_quat = [rot.x, rot.y, rot.z, rot.w]
 
-        quat = [rot.x, rot.y, rot.z, rot.w]
-        rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
+        rpy = R.from_quat(self.state_quat).as_euler('xyz', degrees=True)
         roll, pitch, yaw = rpy
 
         state_att = (roll, pitch, yaw)
@@ -130,47 +133,75 @@ class ViconPositionNode(Node):
             self.firstSetpoint = False
 
         state_att = self.flip_guard(state_att)
-        self.loc.send_extpose(state_pos, quat)
+        self.loc.send_extpose(self.state_pos, self.state_quat)
+
         # tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
         if self._should_log("viconCB"):
                 self.get_logger().info(
                     f"viconCB sent: \n" 
-                    f"Position: {state_pos} m | "
+                    f"Position: {self.state_pos} m | "
                     f"Orientation: {state_att} | "
                     )
 
         # self.dataPacket = tempPacket
-    
+
+    def setpointDistanceUpdate(self):
+        self.setpointDistance[0] = self.dataPacket.setpoint_pos[0]-self.state_pos[0]
+        self.setpointDistance[1] = self.dataPacket.setpoint_pos[1]-self.state_pos[1]
+        self.setpointDistance[2] = self.dataPacket.setpoint_pos[2]-self.state_pos[2]
+
+        self.setpointDistance[3] = m.sqrt((self.state_pos[0]-self.dataPacket.setpoint_pos[0])**2
+                                         +(self.state_pos[1]-self.dataPacket.setpoint_pos[1])**2
+                                         +(self.state_pos[2]-self.dataPacket.setpoint_pos[2])**2)
+        
+        self.setpointDistance[4] = m.sqrt((self.state_pos[0]-self.viapointQueue[0][0])**2
+                                         +(self.state_pos[1]-self.viapointQueue[0][1])**2
+                                         +(self.state_pos[2]-self.viapointQueue[0][2])**2)
+
+    def setpoint_sender(self):
+        self.setpointDistanceUpdate()
+
+        viapointAmount = self.setpointDistance[3]*10
+
+        for i in range(viapointAmount-1,-1,-1):
+            viapoint: list[float] = [self.dataPacket.setpoint_pos[0]-i/viapointAmount*self.setpointDistance[0]
+                                    ,self.dataPacket.setpoint_pos[1]-i/viapointAmount*self.setpointDistance[1]
+                                    ,self.dataPacket.setpoint_pos[2]-i/viapointAmount*self.setpointDistance[2]]
+            self.viapointQueue.append(viapoint)
+
+        while(self.setpointDistance[3] >= 0.01):
+            while(self.setpointDistance[4] >= 0.01):
+                if self._should_log("CFThread"):
+                    self.channel.send_packet(struct.pack('<fff',self.viapointQueue[0][0],self.viapointQueue[0][1],self.viapointQueue[0][2]))
+                    self.get_logger().info(
+                        f"CFThread sent:\n "
+                        f"Setpoint_XPos: {self.viapointQueue[0][0]} |"
+                        f"Setpoint_YPos: {self.viapointQueue[0][1]} |"
+                        f"Setpoint_ZPos: {self.viapointQueue[0][2]} |"
+                        )
+                self.setpointDistanceUpdate()
+            self.viapointQueue.pop(0)
+
+    def CFThread(self):
+        # i = 0
+        # oldcmd = self.dataPacket.setpoint_pos
+        while not self.exit:
+            # time.sleep(0.01)
+            if self.channel is None or self.dataPacket is None or self.lunched is False:
+                continue
+            # if oldcmd is self.dataPacket.setpoint_pos and i < 50:
+            #     i += 1
+            #     continue
+            # i = 0
+            # oldcmd = self.dataPacket.setpoint_pos
+
+            self.setpoint_sender()
+                
     def rclThread(self):
         rclpy.spin(self)
         self.exit = True
         rclpy.shutdown()
-
-    def CFThread(self):
-        i = 0
-        oldcmd = self.dataPacket.setpoint_pos
-        while not self.exit:
-            time.sleep(0.01)
-            if self.channel is None or self.dataPacket is None or self.lunched is False:
-                continue
-            if oldcmd is self.dataPacket.setpoint_pos and i < 50:
-                i += 1
-                continue
-            i = 0
-            oldcmd = self.dataPacket.setpoint_pos
-            self.channel.send_packet(self.dataPacket.cmdpacket())
-            # self.channel.send_packet(self.dataPacket.returnType(1))
-            # self.channel.send_packet(self.dataPacket.returnType(2))
-
-            if self._should_log("CFThread"):
-                self.get_logger().info(
-                    f"CFThread sent:\n "
-                    # f"State_Pos: {self.dataPacket.state_pos} |"
-                    # f"State_Vel: {self.dataPacket.state_vel} |" 
-                    # f"State_Att: {self.dataPacket.state_att} |"
-                    f"Setpoint_Pos: {self.dataPacket.setpoint_pos} |"
-                    )
 
     def appchannel_callback(self,data):
         position = [struct.unpack('<f', data[0:4])[0],struct.unpack('<f', data[4:8])[0],struct.unpack('<f', data[8:12])[0]]
