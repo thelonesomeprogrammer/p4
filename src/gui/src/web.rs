@@ -89,6 +89,7 @@ fn index() -> Option<RawHtml<Cow<'static, [u8]>>> {
 
 #[post("/api/control", data = "<point>")]
 fn control(point: String, state: &State<RokctState>) {
+
     match point.as_str() {
         "land" => {
             state.node.publisher.clone().publish(&Point {
@@ -108,7 +109,9 @@ fn control(point: String, state: &State<RokctState>) {
         }
         _ => {}
     }
-    let mut data = point.split(';').filter_map(|s| s.split(':').nth(1));
+    // let mut data = point.split(';').filter_map(|s| s.split(':').nth(1));
+    let mut data = point.split(",");
+  
     let x = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
     let y = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
     let z = data.next().unwrap_or("0").parse::<f64>().unwrap_or(0.0);

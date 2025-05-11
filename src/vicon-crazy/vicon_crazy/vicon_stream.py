@@ -19,7 +19,7 @@ class DataPacket:
     state_att: List[float]
     setpoint_pos: List[float]
 
-    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.5]):
+    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.0]):
         self.state_pos = state_pos
         self.state_vel = state_vel
         self.state_att = state_att
@@ -59,11 +59,12 @@ class ViconPositionNode(Node):
         # self.lasttime = 0
 
         # self.lastpos = [0.0, 0.0, 0.0]
-        self.cmd_pos = [0.0, 0.0, 0.5]
+        self.firstSetpoint = True
 
         self.pos = [0,0,0]
         self.dataPacket = DataPacket()
         self.exit = False
+        self.last_att = [0.0, 0.0, 0.0]
         self.cf_init()
 
     def cf_init(self):
@@ -105,25 +106,30 @@ class ViconPositionNode(Node):
             self.lunched = True
             return
         self.dataPacket.setpoint_pos = [msg.x,msg.y,msg.z]
-        
+
+    def flip_guard(self, state_att):
+        if abs(state_att[0]-self.last_att[0]) < 20 or abs(state_att[1]-self.last_att[1]) < 20 or abs(state_att[2]-self.last_att[2]) < 20:
+            self.last_att = state_att
+        return self.last_att
+
     def vicon_callback(self, msg: PoseStamped):
         pos = msg.pose.position
         rot = msg.pose.orientation
 
-        # self.lastpos = [self.pos[0], self.pos[1], self.pos[2]]
-
-        # time = float(float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec)/10**9)
-        # dt = time - self.lasttime
-        # self.lasttime = time
-
         state_pos = (pos.x, pos.y, pos.z)  # forward is x, left is y, up is z
-        # state_vel = ((pos.x-self.lastpos[0])/dt, (pos.y-self.lastpos[1])/dt, (pos.z-self.lastpos[2])/dt)
 
         quat = [rot.x, rot.y, rot.z, rot.w]
         rpy = R.from_quat(quat).as_euler('xyz', degrees=True)
         roll, pitch, yaw = rpy
 
         state_att = (roll, pitch, yaw)
+
+        if self.firstSetpoint:
+            self.dataPacket.setpoint_pos = [pos.x, pos.y, pos.z+0.5]
+            self.last_att = [state_att[0], state_att[1], state_att[2]]
+            self.firstSetpoint = False
+
+        state_att = self.flip_guard(state_att)
         self.loc.send_extpose(state_pos, quat)
         # tempPacket = DataPacket(state_pos = state_pos, state_vel = state_vel, state_att = state_att, setpoint_pos = self.cmd_pos)
 
