@@ -19,7 +19,7 @@ class DataPacket:
     state_att: List[float]
     setpoint_pos: List[float]
 
-    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.5]):
+    def __init__(self, state_pos = [0.0, 0.0, 0.0], state_vel = [0.0, 0.0, 0.0], state_att = [0.0, 0.0, 0.0], setpoint_pos = [0.0, 0.0, 0.0]):
         self.state_pos = state_pos
         self.state_vel = state_vel
         self.state_att = state_att
@@ -57,7 +57,7 @@ class ViconPositionNode(Node):
         # self.lasttime = 0
 
         # self.lastpos = [0.0, 0.0, 0.0]
-        self.cmd_pos = [0.0, 0.0, 0.5]
+        self.firstSetpoint = True
 
         self.pos = [0,0,0]
         self.dataPacket = DataPacket()
@@ -104,6 +104,10 @@ class ViconPositionNode(Node):
     def vicon_callback(self, msg: PoseStamped):
         pos = msg.pose.position
         rot = msg.pose.orientation
+
+        if self.firstSetpoint:
+            self.dataPacket.setpoint_pos = [pos.x, pos.y, pos.z]
+            self.firstSetpoint = False
 
         # self.lastpos = [self.pos[0], self.pos[1], self.pos[2]]
 
