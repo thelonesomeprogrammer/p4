@@ -54,6 +54,58 @@ h1 {
 .program_container {
 }
 
+.button_div {
+	display: flex; /* Aligns child elements horizontally */
+	justify-content: space-around; /* Centers content */
+	align-items: button; /* Centers content vertically */
+	margin-top: 10px; /* Adds space above the button section */
+}
+
+.clear_but {
+	background-color: #ff6347; /* Red color for clear button */
+	color: #fff; /* White text */
+	border: none; /* Removes default border */
+	padding: 10px 15px; /* Inner spacing for the button */
+	margin-top: 10px; /* Adds space above button */
+	border-radius: 5px; /* Rounded corners */
+	cursor: pointer; /* Indicates the button is clickable */
+	transition: background-color 0.3s ease; /* Smooth color change on hover */
+}
+
+.clear_but:hover {
+	background-color: #e74c3c; /* Darker red on hover */
+}
+
+.launch_but {
+	background-color: #4caf50; /* Green color for lunch button */
+	color: #fff; /* White text */
+	border: none; /* Removes default border */
+	padding: 10px 15px; /* Inner spacing for the button */
+	margin-top: 10px; /* Adds space above button */
+	border-radius: 5px; /* Rounded corners */
+	cursor: pointer; /* Indicates the button is clickable */
+	transition: background-color 0.3s ease; /* Smooth color change on hover */
+}
+
+.launch_but:hover {
+	background-color: #45a049; /* Darker green on hover */
+}
+
+.land_but {
+	background-color: #ff9800; /* Orange color for land button */
+	color: #fff; /* White text */
+	border: none; /* Removes default border */
+	padding: 10px 15px; /* Inner spacing for the button */
+	margin-top: 10px; /* Adds space above button */
+	border-radius: 5px; /* Rounded corners */
+	cursor: pointer; /* Indicates the button is clickable */
+	transition: background-color 0.3s ease; /* Smooth color change on hover */
+}
+
+.land_but:hover {
+	background-color: #f57c00; /* Darker orange on hover */
+}
+
 .data_div p {
 	margin-bottom: 10px; /* Adds spacing between paragraphs */
 }
