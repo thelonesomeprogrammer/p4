@@ -122,7 +122,7 @@ fn stream(state: &State<RokctState>) -> String {
         yaw * 180.0 / std::f64::consts::PI,
     ];
     return format!(
-        "x:{};y:{};z:{};r:{};p:{};y:{};link:{}",
+        "x:{:.2};y:{:.2};z:{:.2};r:{:.2};p:{:.2};y:{:.2};link:{}",
         pose.position.x, pose.position.y, pose.position.z, rpy[0], rpy[1], rpy[2], link,
     );
 }
