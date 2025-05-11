@@ -176,5 +176,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /venv
 RUN . /venv/bin/activate \
 		&& pip install cflib pyyaml
+RUN mkdir -p /etc/udev/rules.d/
+
+RUN cat <<EOF | sudo tee /etc/udev/rules.d/99-bitcraze.rules > /dev/null
+# Crazyradio (normal operation)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="7777", MODE="0664", GROUP="plugdev"
+# Bootloader
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="0101", MODE="0664", GROUP="plugdev"
+# Crazyflie (over USB)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE="0664", GROUP="plugdev"
+EOF
 
 ENV DEBIAN_FRONTEND=
