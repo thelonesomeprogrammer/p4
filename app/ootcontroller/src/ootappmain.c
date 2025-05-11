@@ -75,6 +75,10 @@ void appMain() {
       mySetpoint.position.x = rxPacket.pos.x;
       mySetpoint.position.y = rxPacket.pos.y;
       mySetpoint.position.z = rxPacket.pos.z;
+      if (rxPacket.pos.z == 0 && rxPacket.pos.x == 0 && rxPacket.pos.y == 0) {
+        memset(&mySetpoint, 0, sizeof(setpoint_t));
+      }
+
       commanderSetSetpoint(&mySetpoint, 3);
     }
 
@@ -89,7 +93,7 @@ void appMain() {
 
     // if (supervisorAreMotorsAllowedToRun()) {
     //   txPacket.debugState = true;
-    // } 
+    // }
     // else {
     //   txPacket.debugState = false;
     // }
