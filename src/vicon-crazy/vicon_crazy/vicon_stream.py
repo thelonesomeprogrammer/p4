@@ -61,7 +61,7 @@ class ViconPositionNode(Node):
 
         # self.lastpos = [0.0, 0.0, 0.0]
         self.firstSetpoint = True
-        self.setpointDistance: list[float] = [0.0, 0.0, 0.0, 0.0]
+        self.setpointDistance: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
         self.viapointQueue: list[list[float], list[float]] = []
 
         self.pos = [0,0,0]
@@ -105,6 +105,7 @@ class ViconPositionNode(Node):
             return False
 
     def cf_command_received(self, msg: Point):
+        print(f"msg: {msg.x, msg.y, msg.z}")
         if msg.x == 0.006969 and msg.y == 0.006969 and msg.z == 1.006969:
             self.lunched = True
             return
@@ -155,23 +156,28 @@ class ViconPositionNode(Node):
                                          +(self.state_pos[1]-self.dataPacket.setpoint_pos[1])**2
                                          +(self.state_pos[2]-self.dataPacket.setpoint_pos[2])**2)
         
-        self.setpointDistance[4] = m.sqrt((self.state_pos[0]-self.viapointQueue[0][0])**2
-                                         +(self.state_pos[1]-self.viapointQueue[0][1])**2
-                                         +(self.state_pos[2]-self.viapointQueue[0][2])**2)
+        if len(self.viapointQueue) > 0:
+            self.setpointDistance[4] = m.sqrt((self.state_pos[0]-self.viapointQueue[0][0])**2
+                                            +(self.state_pos[1]-self.viapointQueue[0][1])**2
+                                            +(self.state_pos[2]-self.viapointQueue[0][2])**2)
 
     def setpoint_sender(self):
         self.setpointDistanceUpdate()
 
-        viapointAmount = self.setpointDistance[3]*10
+        viapointAmount: int = m.floor(self.setpointDistance[3]*10)
 
         for i in range(viapointAmount-1,-1,-1):
             viapoint: list[float] = [self.dataPacket.setpoint_pos[0]-i/viapointAmount*self.setpointDistance[0]
                                     ,self.dataPacket.setpoint_pos[1]-i/viapointAmount*self.setpointDistance[1]
                                     ,self.dataPacket.setpoint_pos[2]-i/viapointAmount*self.setpointDistance[2]]
             self.viapointQueue.append(viapoint)
+        print(self.viapointQueue)
+        self.setpointDistanceUpdate()
 
         while(self.setpointDistance[3] >= 0.01):
+            print("In setpoint loop")
             while(self.setpointDistance[4] >= 0.01):
+                print("In viapoint loop")
                 if self._should_log("CFThread"):
                     self.channel.send_packet(struct.pack('<fff',self.viapointQueue[0][0],self.viapointQueue[0][1],self.viapointQueue[0][2]))
                     self.get_logger().info(
