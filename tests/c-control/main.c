@@ -57,7 +57,9 @@ void leadinit(lead_t *lead, float z, float p, float k) {
 
 void leadupdate(lead_t *lead, float input, float dt) {
   // Update the lead filter state (K*(u[k]*(1+z*T)-u[k-1])+y[k-1])/(1+p*T)
-  lead->output = (lead->k*(input*(1+lead->z*dt)-lead->lastInput)+lead->lastOutput)/(1+lead->p*dt)
+  lead->output = (lead->k * (input * (1 + lead->z * dt) - lead->lastInput) +
+                  lead->lastOutput) /
+                 (1 + lead->p * dt);
 }
 
 void controllerOutOfTreeInit() {
