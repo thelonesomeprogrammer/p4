@@ -8,6 +8,8 @@ typedef struct {
   float p;
   float k;
   float output;
+  float lastOutput;
+  float lastInput;
 } lead_t;
 
 typedef struct {
@@ -54,9 +56,8 @@ void leadinit(lead_t *lead, float z, float p, float k) {
 }
 
 void leadupdate(lead_t *lead, float input, float dt) {
-  // Update the lead filter state (k z e^(-p t) + k p (-e^(-p t)))
-  lead->output = input * lead->k * lead->z * exp(-lead->p * dt) +
-                 input * lead->k * lead->p * (-exp(-lead->p * dt));
+  // Update the lead filter state (K*(u[k]*(1+z*T)-u[k-1])+y[k-1])/(1+p*T)
+  lead->output = (lead->k*(input*(1+lead->z*dt)-lead->lastInput)+lead->lastOutput)/(1+lead->p*dt)
 }
 
 void controllerOutOfTreeInit() {
