@@ -1,7 +1,7 @@
 # Variables
 CC = gcc
 CFLAGS = -Wall -lm
-SRC = main.c
+SRC = main.c chat_sim.c
 OBJ = $(SRC:.c=.o)
 TARGET = myapp
 

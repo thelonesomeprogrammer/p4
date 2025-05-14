@@ -1,7 +1,8 @@
 // main.c that takes a string and prints it to the console
 #include "cf_types.h"
-#include <math.h>
 #include <stdio.h>
+
+extern void simulate_step(state_t *state, const control_t *control);
 
 typedef struct {
   float z;
@@ -91,8 +92,6 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[0], error[0], dt); // x
     ootpidstep(&ootpids[1], error[1], dt); // y
     ootpidstep(&ootpids[2], error[2], dt); // z
-  }
-  if (RATE_DO_EXECUTE(250, stabilizerStep)) {
 
     // roll + pitch error
     error[3] = ootpids[0].output - state->attitude.roll;
@@ -101,12 +100,17 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     // Update the lead controllers
     leadupdate(&lead[0], error[3], dt); // roll
     leadupdate(&lead[1], error[4], dt); // pitch
-  }
 
-  control->thrustSi = ootpids[2].output; // N
-  control->torqueX = lead[0].output;     // Nm
-  control->torqueY = lead[1].output;     // Nm
-  control->torqueZ = 0.0f;               // Nm
+    control->thrustSi += ootpids[2].output; // N
+    control->torqueX += lead[0].output;     // Nm
+    control->torqueY += -lead[1].output;    // Nm
+    control->torqueZ += 0.0f;               // Nm
+
+    // positive thrust
+    if (control->thrustSi < 0.0f) {
+      control->thrustSi = 0.0f;
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -115,7 +119,58 @@ int main(int argc, char *argv[]) {
   }
   // Initialize the controller
   controllerOutOfTreeInit();
+  // Create a control structure
+  control_t control;
+  // Create a setpoint structure
+  setpoint_t setpoint;
+  // Create a sensor data structure
+  sensorData_t sensors;
+  // Create a state structure
+  state_t state;
 
+  // Initialize the setpoint
+  setpoint.position.x = 1.0f;
+  setpoint.position.y = 1.0f;
+  setpoint.position.z = 1.0f;
+  setpoint.attitude.roll = 0.0f;
+  setpoint.attitude.pitch = 0.0f;
+  setpoint.attitude.yaw = 0.0f;
+
+  // Initialize the state
+  state.position.x = 0.0f;
+  state.position.y = 0.0f;
+  state.position.z = 0.0f;
+  state.attitude.roll = 0.0f;
+  state.attitude.pitch = 0.0f;
+  state.attitude.yaw = 0.0f;
+  state.velocity.x = 0.0f;
+  state.velocity.y = 0.0f;
+  state.velocity.z = 0.0f;
+  state.acc.x = 0.0f;
+  state.acc.y = 0.0f;
+  state.acc.z = 0.0f;
+
+  // Initialize the control
+  control.thrustSi = 0.0f;
+  control.torqueX = 0.0f;
+  control.torqueY = 0.0f;
+  control.torqueZ = 0.0f;
+
+  // print header
+  printf("Control Output: thrustSi torqueX torqueY torqueZ; State: position.x "
+         "position.y position.z attitude.roll attitude.pitch attitude.yaw\n");
+
+  for (int i = 0; i < 500; i++) {
+    // Call the controller
+    controllerOutOfTree(&control, &setpoint, &sensors, &state, i);
+    // Simulate the step
+    simulate_step(&state, &control);
+    // Print the control output and state
+    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f,\n", control.thrustSi,
+           control.torqueX, control.torqueY, control.torqueZ, state.position.x,
+           state.position.y, state.position.z, state.attitude.roll,
+           state.attitude.pitch, state.attitude.yaw);
+  }
   printf("%i\n", 60);
   return 0;
 }
