@@ -101,9 +101,9 @@ fn control(point: String, state: &State<RokctState>) {
         }
         "launch" => {
             state.node.publisher.clone().publish(&Point {
-                x: 0.006969,
-                y: 0.006969,
-                z: 1.006969,
+                x: 0.0,
+                y: 0.0,
+                z: 10.0,
             });
             return;
         }
