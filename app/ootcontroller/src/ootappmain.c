@@ -27,9 +27,6 @@ int32_t compareResult = 0;
 
 bool newState = false;
 
-// static SemaphoreHandle_t dataMutex;
-// static StaticSemaphore_t dataMutexBuffer;
-
 void appMain() {
   DEBUG_PRINT("Waiting for activation ...\n");
   // Wait for the system to be fully initialized
@@ -105,42 +102,3 @@ void appMain() {
     // vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
   }
 }
-
-/*
-############################################################## stabilizerStep_t
-stabilizerStep_t = uint32_t
-###############################################################state_t
-typedef struct state_s {
-  attitude_t attitude;      // deg (legacy CF2 body coordinate system, where
-pitch is inverted) quaternion_t Quaternion; point_t position;
-velocity_tvelocity;      // m/s
-acc_t acc;                // Gs (but acc.z without considering gravity)
-} state_t;
-###############################################################
-###############################################################setpoint_t
-typedef struct setpoint_s {
-  uint32_t timestamp;
-
-  attitude_t attitude;      // deg
-  attitude_t attitudeRate;  // deg/s
-  quaternion_t attitudeQuaternion;
-  float thrust;
-  point_t position;         // m
-  velocity_t velocity;      // m/s
-  acc_t acceleration;       // m/s^2
-  jerk_t jerk;              // m/s^3
-  bool velocity_body;       // true if velocity is given in body frame; false if
-velocity is given in world frame
-
-  struct {
-    stab_mode_t x;
-    stab_mode_t y;
-    stab_mode_t z;
-    stab_mode_t roll;
-    stab_mode_t pitch;
-    stab_mode_t yaw;
-    stab_mode_t quat;
-  } mode;
-} setpoint_t;
-###############################################################
-*/

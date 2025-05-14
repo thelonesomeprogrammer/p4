@@ -106,7 +106,7 @@ class ViconPositionNode(Node):
 
     def cf_command_received(self, msg: Point):
         print(f"msg: {msg.x, msg.y, msg.z}")
-        if msg.x == 0.006969 and msg.y == 0.006969 and msg.z == 1.006969:
+        if msg.x == 0.0 and msg.y == 0.0 and msg.z == 10.0:
             self.lunched = True
             return
         self.dataPacket.setpoint_pos = [msg.x,msg.y,msg.z]
@@ -175,9 +175,8 @@ class ViconPositionNode(Node):
         self.setpointDistanceUpdate()
 
         while(self.setpointDistance[3] >= 0.01):
-            print("In setpoint loop")
             while(self.setpointDistance[4] >= 0.01):
-                print("In viapoint loop")
+                time.sleep(0.1)
                 if self._should_log("CFThread"):
                     self.channel.send_packet(struct.pack('<fff',self.viapointQueue[0][0],self.viapointQueue[0][1],self.viapointQueue[0][2]))
                     self.get_logger().info(
@@ -190,18 +189,9 @@ class ViconPositionNode(Node):
             self.viapointQueue.pop(0)
 
     def CFThread(self):
-        # i = 0
-        # oldcmd = self.dataPacket.setpoint_pos
         while not self.exit:
-            # time.sleep(0.01)
             if self.channel is None or self.dataPacket is None or self.lunched is False:
                 continue
-            # if oldcmd is self.dataPacket.setpoint_pos and i < 50:
-            #     i += 1
-            #     continue
-            # i = 0
-            # oldcmd = self.dataPacket.setpoint_pos
-
             self.setpoint_sender()
                 
     def rclThread(self):
