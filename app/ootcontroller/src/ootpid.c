@@ -111,14 +111,10 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     leadupdate(&lead[0], error[3], dt); // roll
     leadupdate(&lead[1], error[4], dt); // pitch
   }
-  if (ootpids[2].output > 0.0f) {
-    control->thrustSi = ootpids[2].output*15; // N
-  } else {
-    control->thrustSi = 0.0f; // N
-  }
-  control->torqueX = lead[0].output; // Nm
-  control->torqueY = lead[1].output; // Nm
-  control->torqueZ = 0.0f;           // Nm
+  control->thrustSi = 0.369232 + ootpids[2].output; // N
+  control->torqueX = lead[0].output;                // Nm
+  control->torqueY = lead[1].output;                // Nm
+  control->torqueZ = 0.0f;                          // Nm
 }
 
 bool controllerOutOfTreeTest() { return true; }
