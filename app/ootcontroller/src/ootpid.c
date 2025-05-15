@@ -1,5 +1,6 @@
-#include "stabilizer_types.h"
 #include "controller_brescianini.h"
+#include "log.h"
+#include "stabilizer_types.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -93,8 +94,6 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[0], error[0], dt); // x
     ootpidstep(&ootpids[1], error[1], dt); // y
     ootpidstep(&ootpids[2], error[2], dt); // z
-  }
-  if (RATE_DO_EXECUTE(250, stabilizerStep)) {
 
     // roll + pitch error
     error[3] = ootpids[0].output - state->attitude.roll;
@@ -111,9 +110,7 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   control->torqueZ = 0.0f;               // Nm
 }
 
-bool controllerOutOfTreeTest(){
-  return true;
-}
+bool controllerOutOfTreeTest() { return true; }
 
 // void controllerOutOfTreeInit() {
 //   controllerBrescianiniInit();
@@ -125,3 +122,22 @@ bool controllerOutOfTreeTest(){
 
 //   controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
 // }
+
+LOG_GROUP_START(con)
+// log add pids
+LOG_ADD(LOG_FLOAT, x, &ootpids[0].output)
+LOG_ADD(LOG_FLOAT, y, &ootpids[1].output)
+LOG_ADD(LOG_FLOAT, z, &ootpids[2].output)
+
+// log add lead
+LOG_ADD(LOG_FLOAT, r, &lead[0].output)
+LOG_ADD(LOG_FLOAT, p, &lead[1].output)
+
+// log add error
+LOG_ADD(LOG_FLOAT, err_x, &error[0])
+LOG_ADD(LOG_FLOAT, err_y, &error[1])
+LOG_ADD(LOG_FLOAT, err_z, &error[2])
+LOG_ADD(LOG_FLOAT, err_r, &error[3])
+LOG_ADD(LOG_FLOAT, err_p, &error[4])
+
+LOG_GROUP_STOP(con)

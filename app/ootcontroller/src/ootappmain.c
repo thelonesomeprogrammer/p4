@@ -33,7 +33,7 @@ void appMain() {
   systemWaitStart();
 
   struct PacketRX rxPacket;
-  struct PacketTX txPacket;
+  // struct PacketTX txPacket;
 
   TickType_t lastWakeTime;
   lastWakeTime = xTaskGetTickCount();
@@ -50,13 +50,13 @@ void appMain() {
   // logVarId_t y = logGetVarId("controller", "pitch");
   // logVarId_t z = logGetVarId("controller", "yaw");
 
-  logVarId_t x = logGetVarId("stateEstimate", "x");
-  logVarId_t y = logGetVarId("stateEstimate", "y");
-  logVarId_t z = logGetVarId("stateEstimate", "z");
-
-  logVarId_t roll = logGetVarId("stateEstimate", "roll");
-  logVarId_t pitch = logGetVarId("stateEstimate", "pitch");
-  logVarId_t yaw = logGetVarId("stateEstimate", "yaw");
+  // logVarId_t x = logGetVarId("stateEstimate", "x");
+  // logVarId_t y = logGetVarId("stateEstimate", "y");
+  // logVarId_t z = logGetVarId("stateEstimate", "z");
+  //
+  // logVarId_t roll = logGetVarId("stateEstimate", "roll");
+  // logVarId_t pitch = logGetVarId("stateEstimate", "pitch");
+  // logVarId_t yaw = logGetVarId("stateEstimate", "yaw");
 
   // logVarId_t thrust = logGetVarId("controller", "cmd_thrust");
 
@@ -79,12 +79,12 @@ void appMain() {
       commanderSetSetpoint(&mySetpoint, 3);
     }
 
-    txPacket.position.x = logGetFloat(x);
-    txPacket.position.y = logGetFloat(y);
-    txPacket.position.z = logGetFloat(z);
-    txPacket.attitude.roll = logGetFloat(roll);
-    txPacket.attitude.pitch = logGetFloat(pitch);
-    txPacket.attitude.yaw = logGetFloat(yaw);
+    // txPacket.position.x = logGetFloat(x);
+    // txPacket.position.y = logGetFloat(y);
+    // txPacket.position.z = logGetFloat(z);
+    // txPacket.attitude.roll = logGetFloat(roll);
+    // txPacket.attitude.pitch = logGetFloat(pitch);
+    // txPacket.attitude.yaw = logGetFloat(yaw);
 
     // txPacket.batteryVoltage = pmGetBatteryVoltage();
 
@@ -96,9 +96,8 @@ void appMain() {
     // }
 
     // Send data packet to PC
-    appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
+    // appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
 
-    vTaskDelay(pdMS_TO_TICKS(50));
-    // vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
+    vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
   }
 }

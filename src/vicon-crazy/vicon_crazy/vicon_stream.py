@@ -11,6 +11,7 @@ import threading
 from typing import List
 import cflib
 from cflib.crazyflie import Crazyflie, Localization
+from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.appchannel import Appchannel
 
 
@@ -76,14 +77,76 @@ class ViconPositionNode(Node):
         logging.basicConfig(level=logging.ERROR)
         cflib.crtp.init_drivers()
 
+
         self.cf = Crazyflie(rw_cache='./cache')
         self.cf.open_link('radio://0/80/2M')
         self.get_logger().info("Link opened!")
+
+        while 1:
+            try:
+                poslog = LogConfig(name='pose', period_in_ms=1000)
+                poslog.add_variable('stateEstimate.x', 'float')
+                poslog.add_variable('stateEstimate.y', 'float')
+                poslog.add_variable('stateEstimate.z', 'float')
+                poslog.add_variable('stateEstimate.roll', 'float')
+                poslog.add_variable('stateEstimate.pitch', 'float')
+                poslog.add_variable('stateEstimate.yaw', 'float')
+
+
+                targetlog = LogConfig(name='target', period_in_ms=1000)
+                targetlog.add_variable('ctrltarget.x', 'float')
+                targetlog.add_variable('ctrltarget.y', 'float')
+                targetlog.add_variable('ctrltarget.z', 'float')
+
+
+
+                conlog = LogConfig(name='con', period_in_ms=1000)
+                conlog.add_variable('con.x', 'float')
+                conlog.add_variable('con.y', 'float')
+                conlog.add_variable('con.z', 'float')
+                conlog.add_variable('con.r', 'float')
+                conlog.add_variable('con.p', 'float')
+
+
+                self.cf.log.add_config(poslog)
+                self.cf.log.add_config(targetlog)
+                self.cf.log.add_config(conlog)
+
+                poslog.data_received_cb.add_callback(self.log_pos_callback)
+                conlog.data_received_cb.add_callback(self.log_con_callback)
+                targetlog.data_received_cb.add_callback(self.log_target_callback)
+
+                poslog.start()
+                conlog.start()
+                targetlog.start()
+                break
+            except Exception as e:
+                self.get_logger().error(f"Could not add log config, retrying: {e}")
+                time.sleep(0.5)
+
 
         self.cf.appchannel.packet_received.add_callback(self.appchannel_callback)
 
         self.channel = Appchannel(self.cf)
         self.loc = Localization(self.cf)
+
+    def log_pos_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
+            f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
+        )
+
+    def log_target_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Target: {data['ctrltarget.x']}, {data['ctrltarget.y']}, {data['ctrltarget.z']} | "
+        )
+
+    def log_con_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Con: {data['con.x']}, {data['con.y']}, {data['con.z']} | "
+            f"Att: {data['con.r']}, {data['con.p']}"
+        )
+
 
     def runThreads(self):
         self.threads[0].start()

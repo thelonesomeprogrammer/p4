@@ -169,13 +169,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libboost-thread-dev \
 		libboost-date-time-dev \
 		ros-${ROS_DISTRO}-diagnostic-updater \
+		python3-catkin-pkg \
+		python3-yaml \
 		nodejs \
 		yarn \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /venv
 RUN . /venv/bin/activate \
-		&& pip install cflib pyyaml
+		&& pip install cflib
 RUN mkdir -p /etc/udev/rules.d/
 
 RUN cat <<EOF | sudo tee /etc/udev/rules.d/99-bitcraze.rules > /dev/null
