@@ -35,6 +35,13 @@ void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->output = 0.0f;
 }
 
+void resetAllPid() {
+  for (int i = 0; i < 3; i++) {
+    ootpids[i].integral = 0.0f;
+    ootpids[i].last_error = 0.0f;
+  }
+}
+
 void ootpidstep(ootpid_t *ootpid, float error, float dt) {
   // Calculate the integral
   ootpid->integral += error * dt;
@@ -84,7 +91,8 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   // dt
   float dt = 0.01f; // Assuming a fixed time step for simplicity
 
-  if (RATE_DO_EXECUTE(100, stabilizerStep)) {
+  if (RATE_DO_EXECUTE(100, stabilizerStep) && setpoint->position.x != 0.0f &&
+      setpoint->position.y != 0.0f && setpoint->position.z != 0.0f) {
     // error
     error[0] = setpoint->position.x - state->position.x;
     error[1] = setpoint->position.y - state->position.y;
@@ -103,11 +111,14 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     leadupdate(&lead[0], error[3], dt); // roll
     leadupdate(&lead[1], error[4], dt); // pitch
   }
-
-  control->thrustSi = ootpids[2].output; // N
-  control->torqueX = lead[0].output;     // Nm
-  control->torqueY = lead[1].output;     // Nm
-  control->torqueZ = 0.0f;               // Nm
+  if (ootpids[2].output > 0.0f) {
+    control->thrustSi = ootpids[2].output; // N
+  } else {
+    control->thrustSi = 0.0f; // N
+  }
+  control->torqueX = lead[0].output; // Nm
+  control->torqueY = lead[1].output; // Nm
+  control->torqueZ = 0.0f;           // Nm
 }
 
 bool controllerOutOfTreeTest() { return true; }

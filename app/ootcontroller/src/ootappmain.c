@@ -25,6 +25,8 @@ setpoint_t mySetpoint;
 state_t myState;
 int32_t compareResult = 0;
 
+extern void resetAllPid();
+
 bool newState = false;
 
 void appMain() {
@@ -74,7 +76,14 @@ void appMain() {
       mySetpoint.position.z = rxPacket.pos.z;
       if (rxPacket.pos.z == 0 && rxPacket.pos.x == 0 && rxPacket.pos.y == 0) {
         memset(&mySetpoint, 0, sizeof(setpoint_t));
+
+        mySetpoint.mode.x = modeAbs;
+        mySetpoint.mode.y = modeAbs;
+        mySetpoint.mode.z = modeAbs;
+        mySetpoint.mode.yaw = modeAbs;
       }
+
+      resetAllPid();
 
       commanderSetSetpoint(&mySetpoint, 3);
     }
