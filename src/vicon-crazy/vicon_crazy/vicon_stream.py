@@ -92,33 +92,47 @@ class ViconPositionNode(Node):
                 poslog.add_variable('stateEstimate.pitch', 'float')
                 poslog.add_variable('stateEstimate.yaw', 'float')
 
-
                 targetlog = LogConfig(name='target', period_in_ms=1000)
                 targetlog.add_variable('ctrltarget.x', 'float')
                 targetlog.add_variable('ctrltarget.y', 'float')
                 targetlog.add_variable('ctrltarget.z', 'float')
 
+                controllog = LogConfig(name="control", period_in_ms=1000)
+                controllog.add_variable('control.thrustSi', 'float')
+                controllog.add_variable('control.torqueX', 'float')
+                controllog.add_variable('control.torqueY', 'float')
+                controllog.add_variable('control.torqueZ', 'float')
 
+                # conlog = LogConfig(name='con', period_in_ms=1000)
+                # conlog.add_variable('con.x', 'float')
+                # conlog.add_variable('con.y', 'float')
+                # conlog.add_variable('con.z', 'float')
+                # conlog.add_variable('con.r', 'float')
+                # conlog.add_variable('con.p', 'float')
 
-                conlog = LogConfig(name='con', period_in_ms=1000)
-                conlog.add_variable('con.x', 'float')
-                conlog.add_variable('con.y', 'float')
-                conlog.add_variable('con.z', 'float')
-                conlog.add_variable('con.r', 'float')
-                conlog.add_variable('con.p', 'float')
-
+                motlog = LogConfig(name='mpow', period_in_ms=1000)
+                motlog.add_variable('motor.m1', 'uint16_t')
+                motlog.add_variable('motor.m2', 'uint16_t')
+                motlog.add_variable('motor.m3', 'uint16_t')
+                motlog.add_variable('motor.m4', 'uint16_t')
 
                 self.cf.log.add_config(poslog)
                 self.cf.log.add_config(targetlog)
-                self.cf.log.add_config(conlog)
+                self.cf.log.add_config(controllog)
+                # self.cf.log.add_config(conlog)
+                self.cf.log.add_config(motlog)
 
                 poslog.data_received_cb.add_callback(self.log_pos_callback)
-                conlog.data_received_cb.add_callback(self.log_con_callback)
+                controllog.data_received_cb.add_callback(self.log_control_callback)
+                # conlog.data_received_cb.add_callback(self.log_con_callback)
                 targetlog.data_received_cb.add_callback(self.log_target_callback)
+                motlog.data_received_cb.add_callback(self.log_motor_callback)
 
                 poslog.start()
-                conlog.start()
+                controllog.start()
+                # conlog.start()
                 targetlog.start()
+                motlog.start()
                 break
             except Exception as e:
                 self.get_logger().error(f"Could not add log config, retrying: {e}")
@@ -130,10 +144,20 @@ class ViconPositionNode(Node):
         self.channel = Appchannel(self.cf)
         self.loc = Localization(self.cf)
 
+    def log_motor_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Motor pow: {data['motor.m1']}, {data['motor.m2']}, {data['motor.m3']}, {data['motor.m4']}"
+        )
+
     def log_pos_callback(self, timestamp, data, logconf):
         self.get_logger().info(
             f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
             f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
+        )
+    
+    def log_control_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Control: {data['control.thrustSi']}, {data['control.torqueX']}, {data['control.torqueY']}, {data['control.torqueZ']}"
         )
 
     def log_target_callback(self, timestamp, data, logconf):
@@ -234,7 +258,6 @@ class ViconPositionNode(Node):
                                     ,self.dataPacket.setpoint_pos[1]-i/viapointAmount*self.setpointDistance[1]
                                     ,self.dataPacket.setpoint_pos[2]-i/viapointAmount*self.setpointDistance[2]]
             self.viapointQueue.append(viapoint)
-        print(self.viapointQueue)
         self.setpointDistanceUpdate()
 
         while(self.setpointDistance[3] >= 0.01):
