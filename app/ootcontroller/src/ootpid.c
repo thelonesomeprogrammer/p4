@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#define PI 3.14159265358979323846f
+
 typedef struct {
   float z;
   float p;
@@ -26,6 +28,7 @@ ootpid_t ootpids[3];
 lead_t lead[2];
 float error[5];
 float thrust = 0.0f;
+float torque[2] = {0.0f, 0.0f};
 
 void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
@@ -105,8 +108,8 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[2], error[2], dt); // z
 
     // roll + pitch error
-    error[3] = ootpids[0].output - state->attitude.roll;
-    error[4] = ootpids[1].output - state->attitude.pitch;
+    error[3] = (ootpids[0].output - state->attitude.roll) / 180.0f * PI;
+    error[4] = (ootpids[1].output - state->attitude.pitch) / 180.0f * PI;
 
     // Update the lead controllers
     leadupdate(&lead[0], error[3], dt); // roll
@@ -114,11 +117,28 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
 
     // Update the thrust
     thrust = 0.369232f + ootpids[2].output; // N
+
+    // clamp torques
+    if (lead[0].output > 0.005f) {
+      torque[0] = 0.005f;
+    } else if (lead[0].output < -0.005f) {
+      torque[0] = -0.005f;
+    } else {
+      torque[0] = lead[0].output;
+    }
+
+    if (lead[1].output > 0.005f) {
+      torque[1] = 0.005f;
+    } else if (lead[1].output < -0.005f) {
+      torque[1] = -0.500f;
+    } else {
+      torque[1] = lead[1].output;
+    }
   }
-  control->thrustSi = thrust;        // N
-  control->torqueX = lead[0].output; // Nm
-  control->torqueY = lead[1].output; // Nm
-  control->torqueZ = 0.0f;           // Nm
+  control->thrustSi = thrust;   // N
+  control->torqueX = torque[0]; // Nm
+  control->torqueY = torque[1]; // Nm
+  control->torqueZ = 0.0f;      // Nm
 }
 
 bool controllerOutOfTreeTest() { return true; }
@@ -134,21 +154,21 @@ bool controllerOutOfTreeTest() { return true; }
 //   controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
 // }
 
-// LOG_GROUP_START(con)
-// // log add pids
-// LOG_ADD(LOG_FLOAT, x, &ootpids[0].output)
-// LOG_ADD(LOG_FLOAT, y, &ootpids[1].output)
-// LOG_ADD(LOG_FLOAT, z, &ootpids[2].output)
+LOG_GROUP_START(con)
+// log add pids
+LOG_ADD(LOG_FLOAT, x, &ootpids[0].output)
+LOG_ADD(LOG_FLOAT, y, &ootpids[1].output)
+LOG_ADD(LOG_FLOAT, z, &ootpids[2].output)
 
-// // log add lead
-// LOG_ADD(LOG_FLOAT, r, &lead[0].output)
-// LOG_ADD(LOG_FLOAT, p, &lead[1].output)
+// log add lead
+LOG_ADD(LOG_FLOAT, r, &lead[0].output)
+LOG_ADD(LOG_FLOAT, p, &lead[1].output)
 
-// // log add error
-// LOG_ADD(LOG_FLOAT, err_x, &error[0])
-// LOG_ADD(LOG_FLOAT, err_y, &error[1])
-// LOG_ADD(LOG_FLOAT, err_z, &error[2])
-// LOG_ADD(LOG_FLOAT, err_r, &error[3])
-// LOG_ADD(LOG_FLOAT, err_p, &error[4])
+// log add error
+LOG_ADD(LOG_FLOAT, err_x, &error[0])
+LOG_ADD(LOG_FLOAT, err_y, &error[1])
+LOG_ADD(LOG_FLOAT, err_z, &error[2])
+LOG_ADD(LOG_FLOAT, err_r, &error[3])
+LOG_ADD(LOG_FLOAT, err_p, &error[4])
 
-// LOG_GROUP_STOP(con)
+LOG_GROUP_STOP(con)

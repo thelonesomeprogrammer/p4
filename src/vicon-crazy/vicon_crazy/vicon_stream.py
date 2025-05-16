@@ -56,6 +56,8 @@ class ViconPositionNode(Node):
         self.pos_sub = self.create_subscription(PoseStamped, '/vicon/Group466CF/Group466CF/pose',self.vicon_callback, 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_received, 20)
         self.appchannel_pub = self.create_publisher(Pose, 'cf_appchannel', 20)
+        self.logpos_pub = self.create_publisher(Pose, 'cf_logpos', 20)
+        self.control_pub = self.create_publisher(Pose, 'cf_controll', 20)
         self.threads = [threading.Thread(target=self.rclThread),threading.Thread(target=self.CFThread)]
 
         # self.lasttime = 0
@@ -84,7 +86,7 @@ class ViconPositionNode(Node):
 
         while 1:
             try:
-                poslog = LogConfig(name='pose', period_in_ms=1000)
+                poslog = LogConfig(name='pose', period_in_ms=50)
                 poslog.add_variable('stateEstimate.x', 'float')
                 poslog.add_variable('stateEstimate.y', 'float')
                 poslog.add_variable('stateEstimate.z', 'float')
@@ -103,12 +105,12 @@ class ViconPositionNode(Node):
                 controllog.add_variable('control.torqueY', 'float')
                 controllog.add_variable('control.torqueZ', 'float')
 
-                # conlog = LogConfig(name='con', period_in_ms=1000)
-                # conlog.add_variable('con.x', 'float')
-                # conlog.add_variable('con.y', 'float')
-                # conlog.add_variable('con.z', 'float')
-                # conlog.add_variable('con.r', 'float')
-                # conlog.add_variable('con.p', 'float')
+                conlog = LogConfig(name='con', period_in_ms=50)
+                conlog.add_variable('con.x', 'float')
+                conlog.add_variable('con.y', 'float')
+                conlog.add_variable('con.z', 'float')
+                conlog.add_variable('con.r', 'float')
+                conlog.add_variable('con.p', 'float')
 
                 motlog = LogConfig(name='mpow', period_in_ms=1000)
                 motlog.add_variable('motor.m1', 'uint16_t')
@@ -119,18 +121,18 @@ class ViconPositionNode(Node):
                 self.cf.log.add_config(poslog)
                 self.cf.log.add_config(targetlog)
                 self.cf.log.add_config(controllog)
-                # self.cf.log.add_config(conlog)
+                self.cf.log.add_config(conlog)
                 self.cf.log.add_config(motlog)
 
                 poslog.data_received_cb.add_callback(self.log_pos_callback)
                 controllog.data_received_cb.add_callback(self.log_control_callback)
-                # conlog.data_received_cb.add_callback(self.log_con_callback)
+                conlog.data_received_cb.add_callback(self.log_con_callback)
                 targetlog.data_received_cb.add_callback(self.log_target_callback)
                 motlog.data_received_cb.add_callback(self.log_motor_callback)
 
                 poslog.start()
                 controllog.start()
-                # conlog.start()
+                conlog.start()
                 targetlog.start()
                 motlog.start()
                 break
@@ -150,6 +152,10 @@ class ViconPositionNode(Node):
         )
 
     def log_pos_callback(self, timestamp, data, logconf):
+        attitude = [data['stateEstimate.roll'], data['stateEstimate.pitch'], data['stateEstimate.yaw']]
+        quat =  R.from_euler('xyz', attitude, degrees=True).as_quat()
+        self.logpos_pub.publish(Pose(position=Point(x=data['stateEstimate.x'], y=data['stateEstimate.y'], z=data['stateEstimate.z']),
+                                   orientation=Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])))
         self.get_logger().info(
             f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
             f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
@@ -166,6 +172,8 @@ class ViconPositionNode(Node):
         )
 
     def log_con_callback(self, timestamp, data, logconf):
+        self.control_pub.publish(Pose(position=Point(x=data['con.x'], y=data['con.y'], z=data['con.z']),
+                                   orientation=Quaternion(x=data['con.r'], y=data['con.p'], z=0.0, w=1.0)))
         self.get_logger().info(
             f"Con: {data['con.x']}, {data['con.y']}, {data['con.z']} | "
             f"Att: {data['con.r']}, {data['con.p']}"
