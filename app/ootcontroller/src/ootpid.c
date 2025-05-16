@@ -25,6 +25,7 @@ typedef struct {
 ootpid_t ootpids[3];
 lead_t lead[2];
 float error[5];
+float thrust = 0.0f;
 
 void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
@@ -110,11 +111,14 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     // Update the lead controllers
     leadupdate(&lead[0], error[3], dt); // roll
     leadupdate(&lead[1], error[4], dt); // pitch
+
+    // Update the thrust
+    thrust = 0.369232f + ootpids[2].output; // N
   }
-  control->thrustSi = 0.369232 + ootpids[2].output; // N
-  control->torqueX = lead[0].output;                // Nm
-  control->torqueY = lead[1].output;                // Nm
-  control->torqueZ = 0.0f;                          // Nm
+  control->thrustSi = thrust;        // N
+  control->torqueX = lead[0].output; // Nm
+  control->torqueY = lead[1].output; // Nm
+  control->torqueZ = 0.0f;           // Nm
 }
 
 bool controllerOutOfTreeTest() { return true; }
