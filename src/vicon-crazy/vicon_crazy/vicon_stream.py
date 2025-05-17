@@ -11,6 +11,7 @@ import threading
 from typing import List
 import cflib
 from cflib.crazyflie import Crazyflie, Localization
+from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.appchannel import Appchannel
 
 
@@ -55,6 +56,8 @@ class ViconPositionNode(Node):
         self.pos_sub = self.create_subscription(PoseStamped, '/vicon/Group466CF/Group466CF/pose',self.vicon_callback, 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_received, 20)
         self.appchannel_pub = self.create_publisher(Pose, 'cf_appchannel', 20)
+        self.logpos_pub = self.create_publisher(Pose, 'cf_logpos', 20)
+        self.control_pub = self.create_publisher(Pose, 'cf_controll', 20)
         self.threads = [threading.Thread(target=self.rclThread),threading.Thread(target=self.CFThread)]
 
         # self.lasttime = 0
@@ -76,14 +79,106 @@ class ViconPositionNode(Node):
         logging.basicConfig(level=logging.ERROR)
         cflib.crtp.init_drivers()
 
+
         self.cf = Crazyflie(rw_cache='./cache')
         self.cf.open_link('radio://0/80/2M')
         self.get_logger().info("Link opened!")
+
+        while 1:
+            try:
+                poslog = LogConfig(name='pose', period_in_ms=50)
+                poslog.add_variable('stateEstimate.x', 'float')
+                poslog.add_variable('stateEstimate.y', 'float')
+                poslog.add_variable('stateEstimate.z', 'float')
+                poslog.add_variable('stateEstimate.roll', 'float')
+                poslog.add_variable('stateEstimate.pitch', 'float')
+                poslog.add_variable('stateEstimate.yaw', 'float')
+
+                targetlog = LogConfig(name='target', period_in_ms=1000)
+                targetlog.add_variable('ctrltarget.x', 'float')
+                targetlog.add_variable('ctrltarget.y', 'float')
+                targetlog.add_variable('ctrltarget.z', 'float')
+
+                controllog = LogConfig(name="control", period_in_ms=1000)
+                controllog.add_variable('control.thrustSi', 'float')
+                controllog.add_variable('control.torqueX', 'float')
+                controllog.add_variable('control.torqueY', 'float')
+                controllog.add_variable('control.torqueZ', 'float')
+
+                conlog = LogConfig(name='con', period_in_ms=50)
+                conlog.add_variable('con.x', 'float')
+                conlog.add_variable('con.y', 'float')
+                conlog.add_variable('con.z', 'float')
+                conlog.add_variable('con.r', 'float')
+                conlog.add_variable('con.p', 'float')
+
+                motlog = LogConfig(name='mpow', period_in_ms=1000)
+                motlog.add_variable('motor.m1', 'uint16_t')
+                motlog.add_variable('motor.m2', 'uint16_t')
+                motlog.add_variable('motor.m3', 'uint16_t')
+                motlog.add_variable('motor.m4', 'uint16_t')
+
+                self.cf.log.add_config(poslog)
+                self.cf.log.add_config(targetlog)
+                self.cf.log.add_config(controllog)
+                self.cf.log.add_config(conlog)
+                self.cf.log.add_config(motlog)
+
+                poslog.data_received_cb.add_callback(self.log_pos_callback)
+                controllog.data_received_cb.add_callback(self.log_control_callback)
+                conlog.data_received_cb.add_callback(self.log_con_callback)
+                targetlog.data_received_cb.add_callback(self.log_target_callback)
+                motlog.data_received_cb.add_callback(self.log_motor_callback)
+
+                poslog.start()
+                controllog.start()
+                conlog.start()
+                targetlog.start()
+                motlog.start()
+                break
+            except Exception as e:
+                self.get_logger().error(f"Could not add log config, retrying: {e}")
+                time.sleep(0.5)
+
 
         self.cf.appchannel.packet_received.add_callback(self.appchannel_callback)
 
         self.channel = Appchannel(self.cf)
         self.loc = Localization(self.cf)
+
+    def log_motor_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Motor pow: {data['motor.m1']}, {data['motor.m2']}, {data['motor.m3']}, {data['motor.m4']}"
+        )
+
+    def log_pos_callback(self, timestamp, data, logconf):
+        attitude = [data['stateEstimate.roll'], data['stateEstimate.pitch'], data['stateEstimate.yaw']]
+        quat =  R.from_euler('xyz', attitude, degrees=True).as_quat()
+        self.logpos_pub.publish(Pose(position=Point(x=data['stateEstimate.x'], y=data['stateEstimate.y'], z=data['stateEstimate.z']),
+                                   orientation=Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])))
+        self.get_logger().info(
+            f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
+            f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
+        )
+    
+    def log_control_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Control: {data['control.thrustSi']}, {data['control.torqueX']}, {data['control.torqueY']}, {data['control.torqueZ']}"
+        )
+
+    def log_target_callback(self, timestamp, data, logconf):
+        self.get_logger().info(
+            f"Target: {data['ctrltarget.x']}, {data['ctrltarget.y']}, {data['ctrltarget.z']} | "
+        )
+
+    def log_con_callback(self, timestamp, data, logconf):
+        self.control_pub.publish(Pose(position=Point(x=data['con.x'], y=data['con.y'], z=data['con.z']),
+                                   orientation=Quaternion(x=data['con.r'], y=data['con.p'], z=0.0, w=1.0)))
+        self.get_logger().info(
+            f"Con: {data['con.x']}, {data['con.y']}, {data['con.z']} | "
+            f"Att: {data['con.r']}, {data['con.p']}"
+        )
+
 
     def runThreads(self):
         self.threads[0].start()
@@ -106,7 +201,7 @@ class ViconPositionNode(Node):
 
     def cf_command_received(self, msg: Point):
         print(f"msg: {msg.x, msg.y, msg.z}")
-        if msg.x == 0.006969 and msg.y == 0.006969 and msg.z == 1.006969:
+        if msg.x == 0.0 and msg.y == 0.0 and msg.z == 10.0:
             self.lunched = True
             return
         self.dataPacket.setpoint_pos = [msg.x,msg.y,msg.z]
@@ -171,13 +266,11 @@ class ViconPositionNode(Node):
                                     ,self.dataPacket.setpoint_pos[1]-i/viapointAmount*self.setpointDistance[1]
                                     ,self.dataPacket.setpoint_pos[2]-i/viapointAmount*self.setpointDistance[2]]
             self.viapointQueue.append(viapoint)
-        print(self.viapointQueue)
         self.setpointDistanceUpdate()
 
         while(self.setpointDistance[3] >= 0.01):
-            print("In setpoint loop")
             while(self.setpointDistance[4] >= 0.01):
-                print("In viapoint loop")
+                time.sleep(0.1)
                 if self._should_log("CFThread"):
                     self.channel.send_packet(struct.pack('<fff',self.viapointQueue[0][0],self.viapointQueue[0][1],self.viapointQueue[0][2]))
                     self.get_logger().info(
@@ -190,18 +283,9 @@ class ViconPositionNode(Node):
             self.viapointQueue.pop(0)
 
     def CFThread(self):
-        # i = 0
-        # oldcmd = self.dataPacket.setpoint_pos
         while not self.exit:
-            # time.sleep(0.01)
             if self.channel is None or self.dataPacket is None or self.lunched is False:
                 continue
-            # if oldcmd is self.dataPacket.setpoint_pos and i < 50:
-            #     i += 1
-            #     continue
-            # i = 0
-            # oldcmd = self.dataPacket.setpoint_pos
-
             self.setpoint_sender()
                 
     def rclThread(self):

@@ -1,178 +1,174 @@
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "oot_msg_types.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-
-#define DEBUG_MODULE "ootpid"
-#include "debug.h"
-
-#include "controller.h"
-#include "controller_pid.h"
 #include "controller_brescianini.h"
+#include "log.h"
+#include "stabilizer_types.h"
+#include <math.h>
+#include <stdio.h>
 
-// void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
-//   pid->kp = kp;
-//   pid->ki = ki;
-//   pid->kd = kd;
-//   pid->integral = 0.0f;
-//   pid->last_error = 0.0f;
-//   pid->output = 0.0f;
-// }
+#define PI 3.14159265358979323846f
+
+typedef struct {
+  float z;
+  float p;
+  float k;
+  float output;
+  float lastOutput;
+  float lastInput;
+} lead_t;
+
+typedef struct {
+  float kp;
+  float ki;
+  float kd;
+  float integral;
+  float last_error;
+  float output;
+} ootpid_t;
+
+ootpid_t ootpids[3];
+lead_t lead[2];
+float error[5];
+float thrust = 0.0f;
+float torque[2] = {0.0f, 0.0f};
+
+void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
+  pid->kp = kp;
+  pid->ki = ki;
+  pid->kd = kd;
+  pid->integral = 0.0f;
+  pid->last_error = 0.0f;
+  pid->output = 0.0f;
+}
+
+void resetAllPid() {
+  for (int i = 0; i < 3; i++) {
+    ootpids[i].integral = 0.0f;
+    ootpids[i].last_error = 0.0f;
+  }
+}
+
+void ootpidstep(ootpid_t *ootpid, float error, float dt) {
+  // Calculate the integral
+  ootpid->integral += error * dt;
+
+  // Calculate the derivative
+  float derivative = (error - ootpid->last_error) / dt;
+
+  // Calculate the and set the output
+  ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral +
+                   ootpid->kd * derivative;
+
+  // Save the last error
+  ootpid->last_error = error;
+}
+void leadinit(lead_t *lead, float z, float p, float k) {
+  lead->z = z;
+  lead->p = p;
+  lead->k = k;
+  lead->lastInput = 0.0f;
+  lead->lastOutput = 0.0f;
+  lead->output = 0.0f;
+}
+
+void leadupdate(lead_t *lead, float input, float dt) {
+  // Update the lead filter state (K*(u[k]*(1+z*T)-u[k-1])+y[k-1])/(1+p*T)
+  lead->output = (lead->k * (input * (1 + lead->z * dt) - lead->lastInput) +
+                  lead->lastOutput) /
+                 (1 + lead->p * dt);
+}
 
 void controllerOutOfTreeInit() {
-  DEBUG_PRINT("ootpid: controllerOutOfTreeInit()\n");
-
-  controllerBrescianiniInit();
-  // controllerPidInit();
-
   // Initialize the PID controllers
-  // ootPidInit(&ootpids[0], 1.0f, 0.1f, 0.01f);  // Roll rate
-  // ootPidInit(&ootpids[1], 1.0f, 0.1f, 0.01f);  // Pitch rate
-  // ootPidInit(&ootpids[2], 1.0f, 0.1f, 0.01f);  // Yaw rate
-  // ootPidInit(&ootpids[3], 1.0f, 0.1f, 0.01f);  // Thrust rate
-  // ootPidInit(&ootpids[4], 1.0f, 0.1f, 0.01f);  // Roll
-  // ootPidInit(&ootpids[5], 1.0f, 0.1f, 0.01f);  // Pitch
-  // ootPidInit(&ootpids[6], 1.0f, 0.1f, 0.01f);  // Yaw
-  // ootPidInit(&ootpids[7], 1.0f, 0.1f, 0.01f);  // Thrust
-  // ootPidInit(&ootpids[8], 1.0f, 0.1f, 0.01f);  // X velocity
-  // ootPidInit(&ootpids[9], 1.0f, 0.1f, 0.01f);  // Y velocity
-  // ootPidInit(&ootpids[10], 1.0f, 0.1f, 0.01f); // Z velocity
-  // ootPidInit(&ootpids[11], 1.0f, 0.1f, 0.01f); // X position
-  // ootPidInit(&ootpids[12], 1.0f, 0.1f, 0.01f); // Y position
-  // ootPidInit(&ootpids[13], 1.0f, 0.1f, 0.01f); // Z position
+  ootPidInit(&ootpids[0], -0.65f, -0.15f, -0.51f); // x
+  ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
+  ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
+  // Initialize the lead filter
+  leadinit(&lead[0], 13.0f, 90.0f, 0.15f); // roll
+  leadinit(&lead[1], 13.0f, 90.0f, 0.15f); // pitch
 }
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
                          const sensorData_t *sensors, const state_t *state,
                          const stabilizerStep_t stabilizerStep) {
-                          
-  controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
-  // controllerPid(control, setpoint, sensors, state, stabilizerStep);
+
+  control->controlMode = controlModeForceTorque;
+
+  // dt
+  float dt = 0.01f; // Assuming a fixed time step for simplicity
+
+  if (RATE_DO_EXECUTE(100, stabilizerStep) && setpoint->position.x != 0.0f &&
+      setpoint->position.y != 0.0f && setpoint->position.z != 0.0f) {
+    // error
+    error[0] = setpoint->position.x - state->position.x;
+    error[1] = setpoint->position.y - state->position.y;
+    error[2] = setpoint->position.z - state->position.z;
+
+    // Update the PID controllers
+    ootpidstep(&ootpids[0], error[0], dt); // x
+    ootpidstep(&ootpids[1], error[1], dt); // y
+    ootpidstep(&ootpids[2], error[2], dt); // z
+
+    // roll + pitch error
+    error[3] = ootpids[0].output - (state->attitude.roll / 180.0f * PI);
+    error[4] = ootpids[1].output - (state->attitude.pitch / 180.0f * PI);
+
+    // Update the lead controllers
+    leadupdate(&lead[0], error[3], dt); // roll
+    leadupdate(&lead[1], error[4], dt); // pitch
+
+    // Update the thrust
+    thrust = 0.40f + ootpids[2].output; // N
+
+    // clamp torques
+    if (lead[0].output > 0.005f) {
+      torque[0] = 0.005f;
+    } else if (lead[0].output < -0.005f) {
+      torque[0] = -0.005f;
+    } else {
+      torque[0] = lead[0].output;
+    }
+
+    if (lead[1].output > 0.005f) {
+      torque[1] = 0.005f;
+    } else if (lead[1].output < -0.005f) {
+      torque[1] = -0.005f;
+    } else {
+      torque[1] = lead[1].output;
+    }
+  }
+  control->thrustSi = thrust;   // N
+  control->torqueX = torque[0]; // Nm
+  control->torqueY = torque[1]; // Nm
+  control->torqueZ = 0.0f;      // Nm
 }
-
-// void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
-//                          const sensorData_t *sensors, const state_t *state,
-//                          const stabilizerStep_t stabilizerStep)
-// {
-
-//   control->controlMode = controlModeLegacy;
-//   // Calculate the error
-// }
-
-// void ootpidstep(ootpid_t *ootpid, float error, float dt) {
-//   // Calculate the integral
-//   ootpid->integral += error * dt;
-
-//   // Calculate the derivative
-//   float derivative = (error - ootpid->last_error) / dt;
-
-//   // Calculate the and set the output
-//   ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral +
-//                    ootpid->kd * derivative;
-
-//   // Save the last error
-//   ootpid->last_error = error;
-// }
 
 bool controllerOutOfTreeTest() { return true; }
 
-/*
-############################################################## stabilizerStep_t
-stabilizerStep_t = uint32_t
-#############################################################control_t
-ypedef enum control_mode_e {
-  controlModeLegacy      = 0,
-        controlModeForceTorque = 1,
-        controlModeForce       = 2,
-        }control_mode_t;
+// void controllerOutOfTreeInit() {
+//   controllerBrescianiniInit();
+// }
 
+// void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
+//   const sensorData_t *sensors, const state_t *state,
+//   const stabilizerStep_t stabilizerStep) {
 
-typedef struct control_s {
-  union {
-    // controlModeLegacy
-    struct {
-      int16_t roll;
-      int16_t pitch;
-      int16_t yaw;
-      float thrust;
-    };
+//   controllerBrescianini(control, setpoint, sensors, state, stabilizerStep);
+// }
 
-    // controlModeForceTorque
-    // Note: Using SI units for a controller makes it hard to tune it for
-different platforms. The normalized force API
-    // is probably a better option.
-    struct {
-      float thrustSi;  // N
-      union { // Nm
-        float torque[3];
-        struct {
-          float torqueX;
-          float torqueY;
-          float torqueZ;
-        };
-      };
-    };
+LOG_GROUP_START(con)
+// log add pids
+LOG_ADD(LOG_FLOAT, x, &ootpids[0].output)
+LOG_ADD(LOG_FLOAT, y, &ootpids[1].output)
+LOG_ADD(LOG_FLOAT, z, &ootpids[2].output)
 
-    // controlModeForce
-    float normalizedForces[STABILIZER_NR_OF_MOTORS]; // 0.0 ... 1.0
-  };
+// log add lead
+LOG_ADD(LOG_FLOAT, r, &lead[0].output)
+LOG_ADD(LOG_FLOAT, p, &lead[1].output)
 
-  control_mode_t controlMode;
-} control_t;
-##############################################################
-##############################################################sensorData_t
+// log add error
+LOG_ADD(LOG_FLOAT, err_x, &error[0])
+LOG_ADD(LOG_FLOAT, err_y, &error[1])
+LOG_ADD(LOG_FLOAT, err_z, &error[2])
+LOG_ADD(LOG_FLOAT, err_r, &error[3])
+LOG_ADD(LOG_FLOAT, err_p, &error[4])
 
-typedef struct sensorData_s {
-  Axis3f acc;               // Gs
-  Axis3f gyro;              // deg/s
-  Axis3f mag;               // gauss
-  baro_t baro;
-#ifdef LOG_SEC_IMU
-  Axis3f accSec;            // Gs
-  Axis3f gyroSec;           // deg/s
-#endif
-  uint64_t interruptTimestamp;
-} sensorData_t;
-
-###############################################################
-###############################################################state_t
-typedef struct state_s {
-  attitude_t attitude;
-        //(legacy CF2 body coordinate system, where pitch is inverted)
-        quaternion_t attitudeQuaternion;
-        point_t position;
-        velocity_t velocity;      // m/s
-        acc_t acc;                // Gs
-        //(but acc.z without considering gravity)
-} state_t;
-###############################################################
-###############################################################setpoint_t
-typedef struct setpoint_s {
-  uint32_t timestamp;
-
-  attitude_t attitude;      // deg
-  attitude_t attitudeRate;  // deg/s
-  quaternion_t attitudeQuaternion;
-  float thrust;
-  point_t position;         // m
-  velocity_t velocity;      // m/s
-  acc_t acceleration;       // m/s^2
-  jerk_t jerk;              // m/s^3
-  bool velocity_body;       // true if velocity is given in body frame; false if
-velocity is given in world frame
-
-  struct {
-    stab_mode_t x;
-    stab_mode_t y;
-    stab_mode_t z;
-    stab_mode_t roll;
-    stab_mode_t pitch;
-    stab_mode_t yaw;
-    stab_mode_t quat;
-  } mode;
-} setpoint_t;
-###############################################################
-*/
+LOG_GROUP_STOP(con)

@@ -23,8 +23,13 @@ tmux send-keys -t $SESSION:2 'source /opt/ros/jazzy/setup.bash' C-m
 tmux send-keys -t $SESSION:2 'source install/setup.bash' C-m
 tmux send-keys -t $SESSION:2 'ros2 run cf_rust_gui web' C-m
 
-# Window 4: bash shell
-tmux new-window -t $SESSION:3 -n shell
+# Window 4: bag recording
+tmux new-window -t $SESSION:3 -n bag
+tmux send-keys -t $SESSION:3 'source /opt/ros/jazzy/setup.bash' C-m
+tmux send-keys -t $SESSION:3 'ros2 bag record --topics /cf_appchannel /vicon/Group466CF/Group466CF/pose /cf_command /cf_logpos /cf_controll -o bag1' C-m
+
+# Window 5: bash shell
+tmux new-window -t $SESSION:4 -n shell
 
 # Attach to the session
 tmux attach-session -t $SESSION
