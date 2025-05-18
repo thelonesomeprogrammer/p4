@@ -25,7 +25,7 @@ setpoint_t mySetpoint;
 state_t myState;
 int32_t compareResult = 0;
 
-extern void resetAllPid();
+// extern void resetAllPid();
 
 bool newState = false;
 
@@ -83,7 +83,7 @@ void appMain() {
         mySetpoint.mode.yaw = modeAbs;
       }
 
-      resetAllPid();
+      // resetAllPid();
 
       commanderSetSetpoint(&mySetpoint, 3);
     }

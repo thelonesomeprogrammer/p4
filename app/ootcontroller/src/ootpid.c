@@ -74,6 +74,9 @@ void leadupdate(lead_t *lead, float input, float dt) {
   lead->output = (lead->k * (input * (1 + lead->z * dt) - lead->lastInput) +
                   lead->lastOutput) /
                  (1 + lead->p * dt);
+  // Update the last input and output
+  lead->lastInput = input;
+  lead->lastOutput = lead->output;
 }
 
 void controllerOutOfTreeInit() {
@@ -108,12 +111,12 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[2], error[2], dt); // z
 
     // roll + pitch error
-    error[3] = ootpids[0].output - (state->attitude.roll / 180.0f * PI);
-    error[4] = ootpids[1].output - (state->attitude.pitch / 180.0f * PI);
+    error[3] = 0 - (state->attitude.roll / 180.0f * PI);
+    error[4] = 0 - (state->attitude.pitch / 180.0f * PI);
 
     // Update the lead controllers
-    leadupdate(&lead[0], error[3], dt); // roll
-    leadupdate(&lead[1], error[4], dt); // pitch
+    leadupdate(&lead[0], error[4], dt); // roll
+    leadupdate(&lead[1], error[3], dt); // pitch
 
     // Update the thrust
     thrust = 0.40f + ootpids[2].output; // N
@@ -134,9 +137,10 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     } else {
       torque[1] = lead[1].output;
     }
+    thrust = 0.3f;
   }
   control->thrustSi = thrust;   // N
-  control->torqueX = torque[0]; // Nm
+  control->torqueX = 0.0f;      // torque[0]; // Nm
   control->torqueY = torque[1]; // Nm
   control->torqueZ = 0.0f;      // Nm
 }
