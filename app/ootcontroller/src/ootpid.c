@@ -85,8 +85,8 @@ void controllerOutOfTreeInit() {
   ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
   ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
   // Initialize the lead filter
-  leadinit(&lead[0], 13.0f, 90.0f, 0.15f); // roll
-  leadinit(&lead[1], 13.0f, 90.0f, 0.15f); // pitch
+  leadinit(&lead[0], 13.0f, 90.0f, 0.25f); // roll
+  leadinit(&lead[1], 13.0f, 90.0f, 0.25f); // pitch
 }
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
