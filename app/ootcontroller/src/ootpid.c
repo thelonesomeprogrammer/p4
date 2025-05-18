@@ -85,8 +85,8 @@ void controllerOutOfTreeInit() {
   ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
   ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
   // Initialize the lead filter
-  leadinit(&lead[0], 13.0f, 90.0f, 0.25f); // roll
-  leadinit(&lead[1], 13.0f, 90.0f, 0.25f); // pitch
+  leadinit(&lead[0], 13.0f, 90.0f, 0.35f); // roll
+  leadinit(&lead[1], 13.0f, 90.0f, 0.35f); // pitch
 }
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
@@ -122,22 +122,22 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     thrust = 0.40f + ootpids[2].output; // N
 
     // clamp torques
-    if (lead[0].output > 0.005f) {
-      torque[0] = 0.005f;
-    } else if (lead[0].output < -0.005f) {
-      torque[0] = -0.005f;
+    if (lead[0].output > 0.01f) {
+      torque[0] = 0.01f;
+    } else if (lead[0].output < -0.01f) {
+      torque[0] = -0.01f;
     } else {
       torque[0] = lead[0].output;
     }
 
-    if (lead[1].output > 0.005f) {
-      torque[1] = 0.005f;
-    } else if (lead[1].output < -0.005f) {
-      torque[1] = -0.005f;
+    if (lead[1].output > 0.01f) {
+      torque[1] = 0.01f;
+    } else if (lead[1].output < -0.01f) {
+      torque[1] = -0.01f;
     } else {
       torque[1] = lead[1].output;
     }
-    thrust = 0.3f;
+    thrust = 0.4f;
   }
   control->thrustSi = thrust;   // N
   control->torqueX = 0.0f;      // torque[0]; // Nm
