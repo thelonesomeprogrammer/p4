@@ -24,7 +24,7 @@ typedef struct {
   float output;
 } ootpid_t;
 
-ootpid_t ootpids[3];
+ootpid_t ootpids[5];
 lead_t lead[2];
 float error[5];
 float thrust = 0.0f;
@@ -84,9 +84,12 @@ void controllerOutOfTreeInit() {
   ootPidInit(&ootpids[0], -0.65f, -0.15f, -0.51f); // x
   ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
   ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
+                                                   //
+  ootPidInit(&ootpids[3], 0.0f, 0.0f, 0.0f);       // roll
+  ootPidInit(&ootpids[4], 0.0f, 0.0f, 0.0008f);    // pitch
   // Initialize the lead filter
-  leadinit(&lead[0], 13.0f, 90.0f, 0.35f); // roll
-  leadinit(&lead[1], 13.0f, 90.0f, 0.35f); // pitch
+  leadinit(&lead[0], 5.0f, 60.0f, 0.07f); // roll
+  leadinit(&lead[1], 5.0f, 60.0f, 0.07f); // pitch
 }
 
 void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
@@ -96,9 +99,9 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   control->controlMode = controlModeForceTorque;
 
   // dt
-  float dt = 0.01f; // Assuming a fixed time step for simplicity
+  float dt = 0.004f; // Assuming a fixed time step for simplicity
 
-  if (RATE_DO_EXECUTE(100, stabilizerStep) && setpoint->position.x != 0.0f &&
+  if (RATE_DO_EXECUTE(250, stabilizerStep) && setpoint->position.x != 0.0f &&
       setpoint->position.y != 0.0f && setpoint->position.z != 0.0f) {
     // error
     error[0] = setpoint->position.x - state->position.x;
@@ -111,36 +114,42 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[2], error[2], dt); // z
 
     // roll + pitch error
+    // error[3] = ootpids[1].output - (state->attitude.roll / 180.0f * PI);
+    // error[4] = ootpids[0].output + (state->attitude.pitch / 180.0f * PI);
+
     error[3] = 0 - (state->attitude.roll / 180.0f * PI);
-    error[4] = 0 - (state->attitude.pitch / 180.0f * PI);
+    // error[4] = 0 + (state->attitude.pitch / 180.0f * PI);
 
     // Update the lead controllers
-    leadupdate(&lead[0], error[4], dt); // roll
-    leadupdate(&lead[1], error[3], dt); // pitch
+    leadupdate(&lead[0], error[3], dt); // roll
+    // leadupdate(&lead[1], error[4], dt); // pitch
+    torque[0] = lead[0].output;
+    // torque[1] = lead[1].output;
+
+    ootpidstep(&ootpids[3], error[3], dt); // roll
+    // ootpidstep(&ootpids[4], error[4], dt); // pitch
+    torque[0] += ootpids[3].output;
+    // torque[1] += ootpids[4].output;
 
     // Update the thrust
-    thrust = 0.40f + ootpids[2].output; // N
+    // thrust = 0.40f + ootpids[2].output; // N
+    thrust = 0.40f;
 
     // clamp torques
-    if (lead[0].output > 0.01f) {
-      torque[0] = 0.01f;
-    } else if (lead[0].output < -0.01f) {
-      torque[0] = -0.01f;
-    } else {
-      torque[0] = lead[0].output;
+    if (torque[0] > 0.005f) {
+      torque[0] = 0.005f;
+    } else if (torque[0] < -0.005f) {
+      torque[0] = -0.005f;
     }
 
-    if (lead[1].output > 0.01f) {
-      torque[1] = 0.01f;
-    } else if (lead[1].output < -0.01f) {
-      torque[1] = -0.01f;
-    } else {
-      torque[1] = lead[1].output;
+    if (torque[1] > 0.005f) {
+      torque[1] = 0.005f;
+    } else if (torque[1] < -0.005f) {
+      torque[1] = -0.005f;
     }
-    thrust = 0.4f;
   }
   control->thrustSi = thrust;   // N
-  control->torqueX = 0.0f;      // torque[0]; // Nm
+  control->torqueX = torque[0]; // torque[0]; // Nm
   control->torqueY = torque[1]; // Nm
   control->torqueZ = 0.0f;      // Nm
 }

@@ -177,7 +177,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN python3 -m venv /venv
 RUN . /venv/bin/activate \
-		&& pip install cflib
+		&& pip install cflib pyyaml
 RUN mkdir -p /etc/udev/rules.d/
 
 RUN cat <<EOF | sudo tee /etc/udev/rules.d/99-bitcraze.rules > /dev/null
