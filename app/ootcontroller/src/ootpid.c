@@ -83,12 +83,12 @@ void leadupdate(lead_t *lead, float input, float dt) {
 
 void controllerOutOfTreeInit() {
   // Initialize the PID controllers
-  ootPidInit(&ootpids[0], -0.65f, -0.15f, -0.51f); // x
-  ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
-  ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
-                                                   //
-  ootPidInit(&ootpids[3], 0.0f, 0.0f, 0.0006f);    // roll
-  ootPidInit(&ootpids[4], 0.0f, 0.0f, 0.0008f);    // pitch
+  ootPidInit(&ootpids[0], 0.65f, 0.0f, 0.51f);   // x
+  ootPidInit(&ootpids[1], 0.65f, 0.0f, 0.51f);   // y
+  ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f); // z
+                                                 //
+  ootPidInit(&ootpids[3], 0.0f, 0.0f, 0.0006f);  // roll
+  ootPidInit(&ootpids[4], 0.0f, 0.0f, 0.0008f);  // pitch
   // Initialize the lead filter
   leadinit(&lead[0], 5.0f, 60.0f, 0.04f); // roll
   leadinit(&lead[1], 5.0f, 60.0f, 0.07f); // pitch
@@ -110,9 +110,9 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     gerror[1] = setpoint->position.y - state->position.y;
     error[2] = setpoint->position.z - state->position.z;
 
-    error[0] = gerror[0] * cosf(state->attitude.yaw / 180.0f * PI) +
+    error[0] = gerror[0] * cosf(state->attitude.yaw / 180.0f * PI) -
                gerror[1] * sinf(state->attitude.yaw / 180.0f * PI);
-    error[1] = gerror[0] * -sinf(state->attitude.yaw / 180.0f * PI) +
+    error[1] = gerror[0] * sinf(state->attitude.yaw / 180.0f * PI) +
                gerror[1] * cosf(state->attitude.yaw / 180.0f * PI);
 
     // Update the PID controllers
@@ -124,15 +124,15 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     xy[1] = ootpids[1].output;
 
     // clamping
-    if (xy[0] > 0.1f) {
-      xy[0] = 0.1f;
-    } else if (xy[0] < -0.1f) {
-      xy[0] = -0.1f;
+    if (xy[0] > 0.01f) {
+      xy[0] = 0.01f;
+    } else if (xy[0] < -0.01f) {
+      xy[0] = -0.01f;
     }
-    if (xy[1] > 0.1f) {
-      xy[1] = 0.1f;
-    } else if (xy[1] < -0.1f) {
-      xy[1] = -0.1f;
+    if (xy[1] > 0.01f) {
+      xy[1] = 0.01f;
+    } else if (xy[1] < -0.01f) {
+      xy[1] = -0.01f;
     }
 
     // roll + pitch error

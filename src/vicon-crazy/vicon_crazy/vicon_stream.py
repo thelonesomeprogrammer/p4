@@ -56,6 +56,7 @@ class ViconPositionNode(Node):
         self.pos_sub = self.create_subscription(PoseStamped, '/vicon/Group466CF/Group466CF/pose',self.vicon_callback, 20)
         self.control_sub = self.create_subscription(Point, 'cf_command', self.cf_command_received, 20)
         self.appchannel_pub = self.create_publisher(Pose, 'cf_appchannel', 20)
+        self.errpos_pub = self.create_publisher(Pose, 'cf_logerr', 20)
         self.logpos_pub = self.create_publisher(Pose, 'cf_logpos', 20)
         self.control_pub = self.create_publisher(Pose, 'cf_controll', 20)
         self.threads = [threading.Thread(target=self.rclThread),threading.Thread(target=self.CFThread)]
@@ -119,7 +120,7 @@ class ViconPositionNode(Node):
                 motlog.add_variable('motor.m4', 'uint16_t')
 
 
-                errlog = LogConfig(name='err', period_in_ms=1000)
+                errlog = LogConfig(name='err', period_in_ms=100)
                 errlog.add_variable('con.err_x', 'float')
                 errlog.add_variable('con.err_y', 'float')
                 errlog.add_variable('con.err_z', 'float')
@@ -167,10 +168,10 @@ class ViconPositionNode(Node):
         quat =  R.from_euler('xyz', attitude, degrees=True).as_quat()
         self.logpos_pub.publish(Pose(position=Point(x=data['stateEstimate.x'], y=data['stateEstimate.y'], z=data['stateEstimate.z']),
                                    orientation=Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])))
-        self.get_logger().info(
-            f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
-            f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
-        )
+        # self.get_logger().info(
+        #     f"Pos: {data['stateEstimate.x']}, {data['stateEstimate.y']}, {data['stateEstimate.z']} | "
+        #     f"Att: {data['stateEstimate.roll']}, {data['stateEstimate.pitch']}, {data['stateEstimate.yaw']} | "
+        # )
     
     def log_control_callback(self, timestamp, data, logconf):
         self.get_logger().info(
@@ -185,16 +186,18 @@ class ViconPositionNode(Node):
     def log_con_callback(self, timestamp, data, logconf):
         self.control_pub.publish(Pose(position=Point(x=data['con.x'], y=data['con.y'], z=data['con.z']),
                                    orientation=Quaternion(x=data['con.r'], y=data['con.p'], z=0.0, w=1.0)))
-        self.get_logger().info(
-            f"Con: {data['con.x']}, {data['con.y']}, {data['con.z']} | "
-            f"Att: {data['con.r']}, {data['con.p']}"
-        )
+        # self.get_logger().info(
+        #     f"Con: {data['con.x']}, {data['con.y']}, {data['con.z']} | "
+        #     f"Att: {data['con.r']}, {data['con.p']}"
+        # )
 
     def log_err_callback(self, timestamp, data, logconf):
-        self.get_logger().info(
-            f"Err: {data['con.err_x']}, {data['con.err_y']}, {data['con.err_z']} | "
-            f"Att: {data['con.err_r']}, {data['con.err_p']}"
-        )
+        self.errpos_pub.publish(Pose(position=Point(x=data['con.err_x'], y=data['con.err_y'], z=data['con.err_z']),
+                                   orientation=Quaternion(x=data['con.err_r'], y=data['con.err_p'], z=0.0, w=1.0)))
+        # self.get_logger().info(
+        #     f"Err: {data['con.err_x']}, {data['con.err_y']}, {data['con.err_z']} | "
+        #     f"Att: {data['con.err_r']}, {data['con.err_p']}"
+        # )
 
 
     def runThreads(self):
