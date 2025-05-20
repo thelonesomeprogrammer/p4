@@ -2,10 +2,10 @@ rosbag2_bagfile_information:
   version: 9
   storage_identifier: mcap
   duration:
-    nanoseconds: 14117261623
+    nanoseconds: 8681629342
   starting_time:
-    nanoseconds_since_epoch: 1747751472294594890
-  message_count: 677
+    nanoseconds_since_epoch: 1747752029011452433
+  message_count: 608
   topics_with_message_count:
     - topic_metadata:
         name: /cf_appchannel
@@ -72,7 +72,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_10f3786d7d40fd2b54367835614bff85d4ad3b5dab62bf8bca0cc232d73b4cd8
-      message_count: 390
+      message_count: 344
     - topic_metadata:
         name: /cf_controll
         type: geometry_msgs/msg/Pose
@@ -94,7 +94,29 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_d501954e9476cea2996984e812054b68026ae0bfae789d9a10b23daf35cc90fa
-      message_count: 143
+      message_count: 88
+    - topic_metadata:
+        name: /cf_logerr
+        type: geometry_msgs/msg/Pose
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: reliable
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_d501954e9476cea2996984e812054b68026ae0bfae789d9a10b23daf35cc90fa
+      message_count: 87
     - topic_metadata:
         name: /cf_logpos
         type: geometry_msgs/msg/Pose
@@ -116,7 +138,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_d501954e9476cea2996984e812054b68026ae0bfae789d9a10b23daf35cc90fa
-      message_count: 143
+      message_count: 88
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
@@ -124,9 +146,9 @@ rosbag2_bagfile_information:
   files:
     - path: yawbag_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 1747751472294594890
+        nanoseconds_since_epoch: 1747752029011452433
       duration:
-        nanoseconds: 14117261623
-      message_count: 677
+        nanoseconds: 8681629342
+      message_count: 608
   custom_data: ~
   ros_distro: jazzy

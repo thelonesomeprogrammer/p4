@@ -120,8 +120,8 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     ootpidstep(&ootpids[1], error[1], dt); // y
     ootpidstep(&ootpids[2], error[2], dt); // z
 
-    xy[0] = ootpids[0].output;
-    xy[1] = ootpids[1].output;
+    xy[0] = -ootpids[0].output;
+    xy[1] = -ootpids[1].output;
 
     // clamping
     if (xy[0] > 0.01f) {
@@ -137,7 +137,7 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
 
     // roll + pitch error
     error[3] = xy[1] - (state->attitude.roll / 180.0f * PI);
-    error[4] = xy[0] + (state->attitude.pitch / 180.0f * PI);
+    error[4] = xy[0] - (state->attitude.pitch / 180.0f * PI);
     error[5] = 0 - (state->attitude.yaw / 180.0f * PI) * 0.0002f;
 
     // error[3] = 0 - (state->attitude.roll / 180.0f * PI);
