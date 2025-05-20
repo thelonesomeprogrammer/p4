@@ -26,7 +26,7 @@ typedef struct {
 
 ootpid_t ootpids[5];
 lead_t lead[2];
-float error[5];
+float error[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 float thrust = 0.0f;
 float torque[2] = {0.0f, 0.0f};
 float xy[2] = {0.0f, 0.0f};
@@ -83,8 +83,8 @@ void leadupdate(lead_t *lead, float input, float dt) {
 
 void controllerOutOfTreeInit() {
   // Initialize the PID controllers
-  ootPidInit(&ootpids[0], 0.65f, 0.0f, 0.51f);   // x
-  ootPidInit(&ootpids[1], 0.65f, 0.0f, 0.51f);   // y
+  ootPidInit(&ootpids[0], 0.15f, 0.0f, 0.51f);   // x
+  ootPidInit(&ootpids[1], 0.15f, 0.0f, 0.51f);   // y
   ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f); // z
                                                  //
   ootPidInit(&ootpids[3], 0.0f, 0.0f, 0.0006f);  // roll
@@ -138,6 +138,7 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
     // roll + pitch error
     error[3] = xy[1] - (state->attitude.roll / 180.0f * PI);
     error[4] = xy[0] + (state->attitude.pitch / 180.0f * PI);
+    error[5] = 0 - (state->attitude.yaw / 180.0f * PI) * 0.0002f;
 
     // error[3] = 0 - (state->attitude.roll / 180.0f * PI);
     // error[4] = 0 + (state->attitude.pitch / 180.0f * PI);
@@ -173,7 +174,7 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   control->thrustSi = thrust;   // N
   control->torqueX = torque[0]; // torque[0]; // Nm
   control->torqueY = torque[1]; // Nm
-  control->torqueZ = 0.0f;      // Nm
+  control->torqueZ = error[5];  // Nm
 }
 
 bool controllerOutOfTreeTest() { return true; }
