@@ -45,7 +45,7 @@ void ootpidstep(ootpid_t *ootpid, float error, float dt) {
   // ootpid->integral += error * dt;
 
   // Calculate the derivative
-  float derivative = (error - ootpid->last_error) / dt;
+  float derivative = (ootpid->last_error - error) / dt;
 
   // Calculate the and set the output
   ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral + ootpid->kd * derivative;
