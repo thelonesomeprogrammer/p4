@@ -48,8 +48,9 @@ void ootpidstep(ootpid_t *ootpid, float error, float dt) {
   float derivative = (error - ootpid->last_error) / dt;
 
   // Calculate the and set the output
-  ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral +
-                   ootpid->kd * derivative;
+  ootpid->output = ootpid->kp * error + ootpid->ki * ootpid->integral + ootpid->kd * derivative;
+
+  printf("Error: %f, lasterror: %f, prop_term: %f, deriv_term: %f, output: %f \n", error, ootpid->last_error, ootpid->kp * error, ootpid->kd * derivative, ootpid->output);
 
   // Save the last error
   ootpid->last_error = error;
@@ -97,6 +98,7 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
              gerror[1] * cosf(state->attitude.yaw / 180.0f * PI);
 
   // Update the PID controllers
+  printf("Start\n");
   ootpidstep(&ootpids[0], error[0], dt); // x
   ootpidstep(&ootpids[1], error[1], dt); // y
   ootpidstep(&ootpids[2], error[2], dt); // z
@@ -164,16 +166,20 @@ int main(int argc, char *argv[]) {
   control.torqueZ = 0.0f;
 
   // print header
-  printf("torqueX torqueY position.x position.y gerr.x gerr.y err.x err.y\n");
+  // printf("torqueX torqueY position.x position.y gerr.x gerr.y err.x err.y\n");
 
-  for (int i = 0; i < 500; i++) {
+  for (int i = 0; i < 100; i++) {
     // Call the controller
     controllerOutOfTree(&control, &setpoint, &sensors, &state, i);
     // Simulate the step
+    state.position.x += 0.1f;
+    // state.position.y += 0.1f;
+    // state.attitude.yaw = 1.0f;
     // Print the control output and state
-    printf("%f, %f, %f, %f, %f, %f, %f, %f\n", control.torqueX, control.torqueY,
-           state.position.x, state.position.y, gerror[0], gerror[1], error[0],
-           error[1]);
+    // printf("%f, %f, %f, %f, %f, %f, %f, %f\n", control.torqueX, control.torqueY,
+    //        state.position.x, state.position.y, gerror[0], gerror[1], error[0],
+    //        error[1]);
+
   }
   return 0;
 }
