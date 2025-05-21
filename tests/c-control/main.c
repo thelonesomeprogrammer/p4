@@ -70,8 +70,8 @@ void leadupdate(lead_t *lead, float input, float dt) {
 
 void controllerOutOfTreeInit() {
   // Initialize the PID controllers
-  ootPidInit(&ootpids[0], 0.15f, 0.0f, 0.51f);   // x
-  ootPidInit(&ootpids[1], 0.15f, 0.0f, 0.51f);   // y
+  ootPidInit(&ootpids[0], 0.15f, 0.0f, 0.0f);    // x
+  ootPidInit(&ootpids[1], 0.15f, 0.0f, 0.0f);    // y
   ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f); // z
   // Initialize the lead filter
   leadinit(&lead[0], 11.0f, 180.0f, 0.35f); // roll
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   state.position.z = 0.0f;
   state.attitude.roll = 0.0f;
   state.attitude.pitch = 0.0f;
-  state.attitude.yaw = 0.0f;
+  state.attitude.yaw = 1.0f;
   state.velocity.x = 0.0f;
   state.velocity.y = 0.0f;
   state.velocity.z = 0.0f;
@@ -170,6 +170,11 @@ int main(int argc, char *argv[]) {
     // Call the controller
     controllerOutOfTree(&control, &setpoint, &sensors, &state, i);
     // Simulate the step
+    if (control.torqueX > 0.0f) {
+      state.position.x += 0.01f;
+    } else if (control.torqueX < 0.0f) {
+      state.position.x -= 0.01f;
+    }
     // Print the control output and state
     printf("%f, %f, %f, %f, %f, %f, %f, %f\n", control.torqueX, control.torqueY,
            state.position.x, state.position.y, gerror[0], gerror[1], error[0],
