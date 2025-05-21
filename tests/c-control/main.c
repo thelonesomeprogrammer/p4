@@ -1,8 +1,9 @@
 // main.c that takes a string and prints it to the console
 #include "cf_types.h"
+#include <math.h>
 #include <stdio.h>
 
-extern void simulate_step(state_t *state, const control_t *control);
+#define PI 3.14159265358979323846f
 
 typedef struct {
   float z;
@@ -22,9 +23,13 @@ typedef struct {
   float output;
 } ootpid_t;
 
-ootpid_t ootpids[3];
+ootpid_t ootpids[5];
 lead_t lead[2];
-float error[5];
+float error[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+float thrust = 0.0f;
+float torque[2] = {0.0f, 0.0f};
+float xy[2] = {0.0f, 0.0f};
+float gerror[2] = {0.0f, 0.0f};
 
 void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
   pid->kp = kp;
@@ -37,7 +42,7 @@ void ootPidInit(ootpid_t *pid, float kp, float ki, float kd) {
 
 void ootpidstep(ootpid_t *ootpid, float error, float dt) {
   // Calculate the integral
-  ootpid->integral += error * dt;
+  // ootpid->integral += error * dt;
 
   // Calculate the derivative
   float derivative = (error - ootpid->last_error) / dt;
@@ -65,9 +70,9 @@ void leadupdate(lead_t *lead, float input, float dt) {
 
 void controllerOutOfTreeInit() {
   // Initialize the PID controllers
-  ootPidInit(&ootpids[0], 0.65f, 0.15f, 0.51f);    // x
-  ootPidInit(&ootpids[1], -0.65f, -0.15f, -0.51f); // y
-  ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f);   // z
+  ootPidInit(&ootpids[0], 0.15f, 0.0f, 0.51f);   // x
+  ootPidInit(&ootpids[1], 0.15f, 0.0f, 0.51f);   // y
+  ootPidInit(&ootpids[2], 0.24f, 0.084f, 0.17f); // z
   // Initialize the lead filter
   leadinit(&lead[0], 11.0f, 180.0f, 0.35f); // roll
   leadinit(&lead[1], 11.0f, 180.0f, 0.35f); // pitch
@@ -82,35 +87,37 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint,
   // dt
   float dt = 0.01f; // Assuming a fixed time step for simplicity
 
-  if (RATE_DO_EXECUTE(100, stabilizerStep)) {
-    // error
-    error[0] = setpoint->position.x - state->position.x;
-    error[1] = setpoint->position.y - state->position.y;
-    error[2] = setpoint->position.z - state->position.z;
+  gerror[0] = setpoint->position.x - state->position.x;
+  gerror[1] = setpoint->position.y - state->position.y;
+  error[2] = setpoint->position.z - state->position.z;
 
-    // Update the PID controllers
-    ootpidstep(&ootpids[0], error[0], dt); // x
-    ootpidstep(&ootpids[1], error[1], dt); // y
-    ootpidstep(&ootpids[2], error[2], dt); // z
+  error[0] = gerror[0] * cosf(state->attitude.yaw / 180.0f * PI) -
+             gerror[1] * sinf(state->attitude.yaw / 180.0f * PI);
+  error[1] = gerror[0] * sinf(state->attitude.yaw / 180.0f * PI) +
+             gerror[1] * cosf(state->attitude.yaw / 180.0f * PI);
 
-    // roll + pitch error
-    error[3] = ootpids[0].output - state->attitude.roll;
-    error[4] = ootpids[1].output - state->attitude.pitch;
+  // Update the PID controllers
+  ootpidstep(&ootpids[0], error[0], dt); // x
+  ootpidstep(&ootpids[1], error[1], dt); // y
+  ootpidstep(&ootpids[2], error[2], dt); // z
 
-    // Update the lead controllers
-    leadupdate(&lead[0], error[3], dt); // roll
-    leadupdate(&lead[1], error[4], dt); // pitch
+  xy[0] = -ootpids[0].output;
+  xy[1] = -ootpids[1].output;
 
-    control->thrustSi += ootpids[2].output; // N
-    control->torqueX += lead[0].output;     // Nm
-    control->torqueY += -lead[1].output;    // Nm
-    control->torqueZ += 0.0f;               // Nm
+  // // clamping
+  // if (xy[0] > 0.01f) {
+  //   xy[0] = 0.01f;
+  // } else if (xy[0] < -0.01f) {
+  //   xy[0] = -0.01f;
+  // }
+  // if (xy[1] > 0.01f) {
+  //   xy[1] = 0.01f;
+  // } else if (xy[1] < -0.01f) {
+  //   xy[1] = -0.01f;
+  // }
 
-    // positive thrust
-    if (control->thrustSi < 0.0f) {
-      control->thrustSi = 0.0f;
-    }
-  }
+  control->torqueY = xy[0];
+  control->torqueX = xy[1];
 }
 
 int main(int argc, char *argv[]) {
@@ -157,20 +164,16 @@ int main(int argc, char *argv[]) {
   control.torqueZ = 0.0f;
 
   // print header
-  printf("Control Output: thrustSi torqueX torqueY torqueZ; State: position.x "
-         "position.y position.z attitude.roll attitude.pitch attitude.yaw\n");
+  printf("torqueX torqueY position.x position.y gerr.x gerr.y err.x err.y\n");
 
   for (int i = 0; i < 500; i++) {
     // Call the controller
     controllerOutOfTree(&control, &setpoint, &sensors, &state, i);
     // Simulate the step
-    simulate_step(&state, &control);
     // Print the control output and state
-    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f,\n", control.thrustSi,
-           control.torqueX, control.torqueY, control.torqueZ, state.position.x,
-           state.position.y, state.position.z, state.attitude.roll,
-           state.attitude.pitch, state.attitude.yaw);
+    printf("%f, %f, %f, %f, %f, %f, %f, %f\n", control.torqueX, control.torqueY,
+           state.position.x, state.position.y, gerror[0], gerror[1], error[0],
+           error[1]);
   }
-  printf("%i\n", 60);
   return 0;
 }
