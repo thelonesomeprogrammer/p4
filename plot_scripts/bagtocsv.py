@@ -68,7 +68,12 @@ def main():
     shit = defaultdict(list)
 
     args = parser.parse_args()
+    first = 0
     for topic, msg, timestamp in read_messages(args.input):
+        if first == 0:
+            first = timestamp
+        timestamp -= first
+        timestamp = timestamp/1000000000
         fmsg = flatten_msg(msg)
         fmsg["time"] = timestamp
         topic = topic.replace("/vicon/Group466CF/Group466CF","/vicon")
